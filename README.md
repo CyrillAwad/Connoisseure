@@ -10,4 +10,10 @@ Statische Frontend-Demo. Die Website liegt als `index.html` im Repository-Root; 
 
 Die Projektseite ist anschließend unter `https://scrabex.github.io/Connoisseure/` erreichbar. Das Frontend verwendet derzeit keine root-absoluten Asset- oder Navigationspfade und funktioniert daher auch unter dem Repository-Unterpfad.
 
-Die Demo ist eigenständig und speichert Änderungen nicht dauerhaft; Backend- und Authentifizierungsintegration sind nicht Bestandteil dieser Veröffentlichung.
+## Supabase
+
+Das Frontend verwendet Supabase JS v2 über ein Browser-CDN und die öffentliche Publishable-Key-Konfiguration direkt in `app.js`. Es enthält weder den Gruppen-PIN noch einen Secret- oder `service_role`-Key. Der PIN wird ausschließlich im Anmeldeformular eingegeben; angemeldet wird mit dem fest konfigurierten gemeinsamen Gruppen-Konto.
+
+Vor dem ersten Login muss dieses Auth-Konto in Supabase manuell angelegt werden (E-Mail `connoisseur.pro@gmx.de`, PIN als Passwort; Signups bleiben deaktiviert). In **Authentication → URL Configuration** sollte die Site URL auf `https://scrabex.github.io/Connoisseure/` gesetzt und diese Adresse zur Redirect-Allowlist hinzugefügt werden. Die erste Gruppenperson muss nicht vorab geseedet werden: Der erste Login kann den ersten Namen direkt in der App eintragen.
+
+Die App lädt Mitglieder, Fressungen, Teilnehmende und Bewertungen nach der Anmeldung aus dem bereits eingerichteten Schema. Sie fügt neue Fressungen als `waiting` ein und nutzt ausschließlich `start_meal` und `submit_meal_rating` für die durch RPC geschützten Schreibvorgänge. Weil alle Mitglieder dieselbe Auth-Identität verwenden, ist die ausgewählte Mitglieds-ID nur eine lokale Browser-Auswahl und kein individueller Identitätsnachweis.
