@@ -441,7 +441,7 @@ async function rateAll(page, value) {
   });
 
   for (const width of [390, 1440]) {
-    await check(`unfinished reviews stay private in the UI until completion at ${width}px`, async () => {
+    await check(`submitted reviews become visible after own rating at ${width}px`, async () => {
       const db = data();
       db.meals.find(meal => meal.id === 'running').creator_member_id = 'm1';
       db.meal_participants = db.meal_participants.filter(entry => entry.meal_id !== 'running');
@@ -454,43 +454,51 @@ async function rateAll(page, value) {
       const {page, context} = await open({width, db, member: 'm3'});
       const details = page.locator('#detailContent');
       const openDetails = () => page.locator('[data-action="details"][data-id="running"]:visible').first().click();
-      const onlyOwnReview = async (comment = null) => {
-        assert.equal(await details.locator('.history-result-person').count(), comment ? 1 : 0);
-        assert.equal(await details.locator('.history-result-category').count(), comment ? 4 : 0);
+      const reviewsHidden = async () => {
+        assert.equal(await details.locator('.history-result-person').count(), 0);
+        assert.equal(await details.locator('.history-result-category').count(), 0);
         assert.equal(await details.locator('.rating-summary').count(), 0, 'no interim average');
         const text = await details.textContent();
         for (const other of [creatorComment, participantComment]) {
-          assert.equal(text.includes(other), other === comment, 'other comments must not enter the DOM');
+          assert.equal(text.includes(other), false, 'submitted review comments must remain hidden before own submission');
         }
-        assert.match(text, /Bewertungen anderer.*sobald alle/);
+      };
+      const submittedReviewsVisible = async () => {
+        assert.equal(await details.locator('.history-result-person').count(), 2);
+        assert.equal(await details.locator('.history-result-category').count(), 8);
+        assert.equal(await details.locator('.creator-badge').count(), 1);
+        assert.equal(await details.locator('.rating-summary').count(), 0, 'interim category averages remain hidden');
+        const text = await details.textContent();
+        for (const comment of [creatorComment, participantComment]) assert.ok(text.includes(comment));
+        assert.match(text, /Restaurant-Durchschnitte erscheinen nach Abschluss/);
       };
       try {
         assert.match(await page.locator('#pendingList').textContent(), /2 von 3 Bewertungen/);
         assert.equal(await page.locator('#dashboardGroupAverage').textContent(), '2,0 ★');
         await openDetails();
-        await onlyOwnReview();
-        assert.match(await details.textContent(), /Du hast noch keine Bewertung abgegeben/);
+        await reviewsHidden();
+        assert.match(await details.textContent(), /Bewertungen werden sichtbar, sobald du selbst bewertet hast/);
         await geometry(page, `unfinished reviews ${width}`);
         await screenshot(page, `${width}-reviews-before-own-submission`);
         await changeMember(page, 'm4');
-        await onlyOwnReview();
+        await reviewsHidden();
         await openDetails();
         assert.match(await details.textContent(), /Du nimmst an dieser Fressung nicht teil/);
         assert.equal(await page.locator('[data-action="rate"][data-id="running"]').count(), 0);
         await changeMember(page, 'm1');
         await openDetails();
-        await onlyOwnReview(creatorComment);
-        assert.equal(await details.locator('.creator-badge').count(), 1);
-        await screenshot(page, `${width}-reviews-own-only`);
+        await submittedReviewsVisible();
+        assert.equal(await page.evaluate(() => window.__fixture.db.meals.find(meal => meal.id === 'running').status), 'running');
+        await screenshot(page, `${width}-reviews-after-own-submission`);
         await navigate(page, 'history');
         assert.equal(await page.locator('#history [data-id="running"]').count(), 0);
         await changeMember(page, 'm2');
-        await onlyOwnReview(participantComment);
+        await submittedReviewsVisible();
         await page.goBack();
         await page.locator('#details.active').waitFor();
-        await onlyOwnReview(participantComment);
+        await submittedReviewsVisible();
         await changeMember(page, 'm3');
-        await onlyOwnReview();
+        await reviewsHidden();
         await page.locator('[data-action="rate"][data-id="running"]').click();
         for (const [index, category] of categories.entries()) {
           const row = page.locator(`[data-rating="${category}"]`);

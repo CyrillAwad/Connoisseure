@@ -601,9 +601,12 @@
   function renderDetails(meal, {navigate = true} = {}) {
     selectedMealId = meal.id;
     const creator = memberById(meal.creator_member_id);
-    const reviews = mealRatings(meal.id)
-      .filter(review => meal.status === 'completed' || review.member_id === currentMember.id)
-      .sort((a, b) => new Date(a.rated_at) - new Date(b.rated_at));
+    const hasRated = Boolean(memberRating(meal.id, currentMember.id));
+    const isParticipant = mealParticipants(meal.id).some(participant => participant.member_id === currentMember.id);
+    const canSeeReviews = meal.status === 'completed' || hasRated;
+    const reviews = canSeeReviews
+      ? mealRatings(meal.id).slice().sort((a, b) => new Date(a.rated_at) - new Date(b.rated_at))
+      : [];
     const score = meal.status === 'completed' ? mealScore(meal) : null;
     const externalReviews = reviews.filter(review => review.member_id !== meal.creator_member_id);
     const summaries = meal.status === 'completed' && externalReviews.length
@@ -614,7 +617,11 @@
       }).join('')}</div><p class="small">Restaurant-Ø: ${score === null ? '—' : `${formatScore(score)} ★`}. Erstellerbewertungen bleiben sichtbar, zählen aber nicht in die Durchschnitte.</p>`
       : meal.status === 'completed'
         ? '<p class="small">Kein Restaurant-Durchschnitt verfügbar: Es gibt keine Bewertung von einem anderen Teilnehmenden.</p>'
-        : '<p class="small">Bewertungen anderer und Restaurant-Durchschnitte werden erst sichtbar, sobald alle Teilnehmenden bewertet haben und die Fressung abgeschlossen ist. Erstellerbewertungen zählen nicht in die Durchschnitte.</p>';
+        : hasRated
+          ? '<p class="small">Du hast bewertet und siehst alle bisher abgegebenen Bewertungen. Restaurant-Durchschnitte erscheinen nach Abschluss; Erstellerbewertungen zählen nicht in die Durchschnitte.</p>'
+          : isParticipant
+            ? '<p class="small">Bewertungen anderer Teilnehmender werden sichtbar, sobald du selbst bewertet hast. Restaurant-Durchschnitte erscheinen nach Abschluss; Erstellerbewertungen zählen nicht in die Durchschnitte.</p>'
+            : '<p class="small">Als Nichtteilnehmer siehst du die Bewertungen erst nach Abschluss. Restaurant-Durchschnitte erscheinen ebenfalls nach Abschluss.</p>';
     const mapUrl = validMapsUrl(meal.maps_url);
     const location = mapUrl
       ? `<a class="maps-link" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener noreferrer">Kartenlink öffnen ↗</a>`
@@ -622,16 +629,17 @@
     const reviewContent = reviews.length
       ? `<div class="history-result-list">${reviews.map(review => renderReview(review, meal)).join('')}</div>`
       : `<div class="empty-state">${meal.status === 'running'
-        ? mealParticipants(meal.id).some(participant => participant.member_id === currentMember.id)
-          ? 'Du hast noch keine Bewertung abgegeben.'
+        ? isParticipant
+          ? 'Bewertungen werden sichtbar, sobald du selbst bewertet hast.'
           : 'Du nimmst an dieser Fressung nicht teil.'
         : 'Noch keine Bewertungen eingetragen.'}</div>`;
     const waitingInfo = meal.status === 'waiting'
       ? '<div class="confirm-box">Die Teilnehmenden werden beim Start festgelegt. Nur der Ersteller kann die Fressung starten.</div>'
       : renderParticipantList(meal);
+    const reviewTitle = meal.status === 'running' && isParticipant && !hasRated ? 'Deine Bewertung' : 'Bewertungen';
     $('#detailContent').innerHTML = `<div class="eyebrow">Fressung im Überblick</div>
       <div class="topbar"><div><h1 class="headline" id="detailsTitle" tabindex="-1">${escapeHtml(meal.restaurant_name)}</h1><p class="intro">${escapeHtml(meal.place || 'Ort nicht angegeben')} · vorgeschlagen von ${escapeHtml(creator.display_name)}</p></div>${mealStatus(meal)}</div>
-      <div class="detail-layout"><div class="card detail-reviews"><h2>${meal.status === 'running' ? 'Deine Bewertung' : 'Bewertungen'}</h2>${summaries}${reviewContent}</div><div class="card detail-secondary">
+      <div class="detail-layout"><div class="card detail-reviews"><h2>${reviewTitle}</h2>${summaries}${reviewContent}</div><div class="card detail-secondary">
         <div class="detail-meta"><div class="meta-box"><b>Ort</b>${location}</div><div class="meta-box"><b>Vorgeschlagen</b>${escapeHtml(formatDate(meal.created_at))}</div><div class="meta-box"><b>Notiz</b>${escapeHtml(meal.note || 'Keine Notiz hinterlegt.')}</div><div class="meta-box"><b>Status</b>${mealStatus(meal)}</div></div>
         ${waitingInfo}
       </div></div>`;
