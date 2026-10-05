@@ -35,6 +35,9 @@
   let selectedMealId = null;
   let ratingValues = {};
   let toastTimer;
+  let placesLibraryPromise = null;
+  let placeAutocomplete = null;
+  let restaurantSearchInitializing = false;
 
   function setMessage(element, message) {
     element.textContent = message || '';
@@ -654,6 +657,7 @@
   function openCreateModal() {
     $('#creatorName').value = currentMember?.display_name || '';
     openModal('createModal');
+    void initializeRestaurantSearch();
   }
 
   async function startMeal() {
@@ -745,6 +749,7 @@
       $('#mealPlace').value = '';
       $('#mapsUrl').value = '';
       $('#note').value = '';
+      resetRestaurantSearch();
       await refreshAndRender();
       toast('Fressung angelegt und für die Gruppe bereitgestellt.');
     } catch (error) {
@@ -876,12 +881,113 @@
 
   function configureCreateForm() {
     $('#createModal .form-grid').innerHTML = `
+      <div class="field restaurant-search"><label>Restaurant auf Google Maps suchen</label><div id="restaurantSearch"></div><div id="restaurantSearchStatus" class="small places-status" role="status" aria-live="polite"></div></div>
       <div class="field"><label for="restaurant">Restaurant</label><input id="restaurant" maxlength="160" placeholder="z. B. Ramen Jun"></div>
       <div class="field"><label for="creatorName">Ersteller</label><input id="creatorName" value="" disabled></div>
       <div class="field"><label for="mealPlace">Ort</label><input id="mealPlace" maxlength="200" placeholder="z. B. Berlin-Kreuzberg" required></div>
       <div class="field"><label for="mapsUrl">Google-Maps-Link (optional)</label><input id="mapsUrl" type="url" placeholder="https://maps.google.com/..."></div>
       <div class="field full"><label for="note">Notiz für die Gruppe (optional)</label><textarea id="note" maxlength="2000" placeholder="Warum müssen wir genau dort hin?"></textarea></div>`;
     $('#ratingModal .modal-head .small').textContent = 'Klicke links auf einen Stern für einen halben, rechts für einen ganzen Stern.';
+  }
+
+  function loadPlacesLibrary() {
+    const apiKey = document.querySelector('meta[name="google-maps-api-key"]')?.content.trim();
+    if (!apiKey) {
+      return Promise.reject(new Error('Die Google-Maps-Suche ist noch nicht konfiguriert. Restaurant, Ort und Maps-Link kannst du weiterhin manuell eintragen.'));
+    }
+    if (!placesLibraryPromise) {
+      placesLibraryPromise = new Promise((resolve, reject) => {
+        if (window.google?.maps?.importLibrary) {
+          window.google.maps.importLibrary('places').then(resolve, reject);
+          return;
+        }
+        const callbackName = '__connoisseureGoogleMapsReady';
+        let settled = false;
+        const finish = (callback, value) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timeoutId);
+          delete window[callbackName];
+          callback(value);
+        };
+        const timeoutId = window.setTimeout(() => {
+          finish(reject, new Error('Google Maps hat nicht rechtzeitig geladen. Prüfe den API-Key und die Netzwerkverbindung.'));
+        }, 15000);
+        window[callbackName] = () => {
+          try {
+            if (!window.google?.maps?.importLibrary) {
+              throw new Error('Die Google-Maps-Bibliothek wurde nicht verfügbar.');
+            }
+            window.google.maps.importLibrary('places').then(
+              library => finish(resolve, library),
+              error => finish(reject, error)
+            );
+          } catch (error) {
+            finish(reject, error);
+          }
+        };
+        const previousAuthFailure = window.gm_authFailure;
+        window.gm_authFailure = () => {
+          $('#restaurantSearchStatus').textContent = 'Google Maps hat den API-Key abgelehnt. Prüfe die API- und Referrer-Beschränkungen.';
+          if (typeof previousAuthFailure === 'function') previousAuthFailure();
+        };
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async&callback=${callbackName}`;
+        script.onerror = () => finish(reject, new Error('Google Maps konnte nicht geladen werden. Prüfe den API-Key und die Netzwerkverbindung.'));
+        document.head.appendChild(script);
+      }).catch(error => {
+        placesLibraryPromise = null;
+        throw error;
+      });
+    }
+    return placesLibraryPromise;
+  }
+
+  async function initializeRestaurantSearch() {
+    const container = $('#restaurantSearch');
+    const status = $('#restaurantSearchStatus');
+    if (!container || placeAutocomplete || restaurantSearchInitializing) return;
+    restaurantSearchInitializing = true;
+    status.textContent = 'Restaurant-Suche wird geladen …';
+    try {
+      const {PlaceAutocompleteElement} = await loadPlacesLibrary();
+      placeAutocomplete = new PlaceAutocompleteElement();
+      placeAutocomplete.setAttribute('placeholder', 'Restaurant oder Adresse eingeben');
+      placeAutocomplete.setAttribute('aria-label', 'Restaurant oder Adresse suchen');
+      placeAutocomplete.includedPrimaryTypes = ['restaurant', 'cafe', 'bar'];
+      placeAutocomplete.addEventListener('gmp-select', async event => {
+        try {
+          status.textContent = 'Restaurant wird übernommen …';
+          const place = event.placePrediction.toPlace();
+          await place.fetchFields({fields: ['displayName', 'formattedAddress', 'googleMapsURI', 'id']});
+          if (!place.displayName) {
+            throw new Error('Google Maps hat keinen Restaurantnamen zurückgegeben.');
+          }
+          $('#restaurant').value = place.displayName;
+          $('#mealPlace').value = place.formattedAddress || '';
+          $('#mapsUrl').value = place.googleMapsURI || (place.id
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.displayName)}&query_place_id=${encodeURIComponent(place.id)}`
+            : '');
+          status.textContent = `Ausgewählt: ${place.displayName}`;
+        } catch (error) {
+          status.textContent = `Auswahl konnte nicht übernommen werden: ${error.message || 'Unbekannter Fehler.'}`;
+        }
+      });
+      container.replaceChildren(placeAutocomplete);
+      status.textContent = 'Suche nach Restaurant, Café oder Bar. Du kannst die Angaben danach bearbeiten.';
+    } catch (error) {
+      status.textContent = error.message || 'Google Maps konnte nicht geladen werden. Du kannst die Angaben manuell eintragen.';
+    } finally {
+      restaurantSearchInitializing = false;
+    }
+  }
+
+  function resetRestaurantSearch() {
+    const container = $('#restaurantSearch');
+    if (container) container.replaceChildren();
+    placeAutocomplete = null;
+    $('#restaurantSearchStatus').textContent = '';
   }
 
   async function initialize() {
