@@ -5,7 +5,7 @@ const fs = require('node:fs/promises');
 const http = require('node:http');
 const path = require('node:path');
 const os = require('node:os');
-const {chromium, webkit} = require('playwright');
+const {chromium, webkit, firefox} = require('playwright');
 const root = path.resolve(__dirname, '..');
 const screenshots = process.env.SCREENSHOT_DIR || path.join(os.tmpdir(), 'connoisseure-ui-checks');
 const widths = [320, 375, 390, 768, 1024, 1440];
@@ -54,6 +54,7 @@ let screenshotCount = 0;
 const failures = [];
 const pageErrors = [];
 async function check(name, run) {
+  if (process.env.FOCUS_ONLY && !name.startsWith('focus marking')) return;
   try { await run(); checks += 1; console.log(`PASS ${name}`); }
   catch (error) { failures.push({name, error: error.stack}); console.error(`FAIL ${name}\n${error.stack}`); }
 }
@@ -61,7 +62,7 @@ async function open({width = 390, db = data(), options = {}, member = 'm1', stor
   fixtureSessions += 1;
   const context = await browser.newContext({
     viewport: {width, height: 900}, reducedMotion: 'reduce',
-    isMobile: width < 768, hasTouch: width < 1024
+    isMobile: width < 768 && process.env.BROWSER_ENGINE !== 'firefox', hasTouch: width < 1024
   });
   const page = await context.newPage();
   const searches = [];
@@ -109,7 +110,8 @@ async function geometry(page, label, {dialog = false} = {}) {
       if (!visible(element) || element.matches('svg, svg *, .star-fill')) return false;
       const box = element.getBoundingClientRect();
       const textControl = element.matches('input, textarea, select');
-      return box.left < -1 || box.right > viewport + 1 || (!textControl && element.scrollWidth > element.clientWidth + 2);
+      const inline = getComputedStyle(element).display === 'inline';
+      return box.left < -1 || box.right > viewport + 1 || (!textControl && !inline && element.scrollWidth > element.clientWidth + 2);
     }).map(element => `${element.tagName}.${element.className?.baseVal ?? element.className}`);
     const controls = [...document.querySelectorAll(dialog ? 'dialog[open] button, dialog[open] input:not([type="checkbox"]), dialog[open] textarea' : 'button, summary')]
       .filter(visible);
@@ -168,7 +170,93 @@ async function rateAll(page, value) {
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   browser = process.env.BROWSER_ENGINE === 'webkit'
     ? await webkit.launch()
+    : process.env.BROWSER_ENGINE === 'firefox'
+    ? await firefox.launch()
     : await chromium.launch({channel: process.env.BROWSER_CHANNEL || 'msedge'});
+
+  for (const width of [390, 1440]) {
+    await check(`focus marking is absent on automatic/pointer focus; keyboard feedback at ${width}px`, async () => {
+      const {page, context} = await open({width});
+      const appearance = locator => locator.evaluate(element => {
+        const css = getComputedStyle(element);
+        return {
+          outline: css.outlineStyle, shadow: css.boxShadow, background: css.backgroundColor,
+          underline: css.textDecorationLine, border: css.borderColor
+        };
+      });
+      const noFrame = state => {
+        assert.equal(state.outline, 'none', 'focused element must have no marking outline');
+        assert.equal(state.shadow, 'none', 'focused element must have no focus halo');
+      };
+      try {
+        await page.bringToFront();
+        await page.locator('#dashboardTitle').focus();
+        assert.equal(await page.evaluate(() => document.activeElement.id), 'dashboardTitle');
+        const heading = await appearance(page.locator('#dashboardTitle'));
+        await screenshot(page, `${width}-focus-initial`);
+        await page.locator('[data-action="start"][data-id="waiting"]').click();
+        const first = page.locator('#memberPicker input').first();
+        assert.ok(await first.evaluate(element => element === document.activeElement));
+        const automatic = await appearance(first);
+        await screenshot(page, `${width}-focus-start-untouched`);
+        noFrame(heading);
+        noFrame(automatic);
+        assert.equal(await first.locator('..').locator('span').last().evaluate(element => getComputedStyle(element).textDecorationLine), 'none');
+        assert.deepEqual(await page.locator('#memberPicker input:checked').evaluateAll(elements => elements.map(element => element.value)), ['m1']);
+        await page.keyboard.press('Space');
+        assert.ok(!await first.isChecked());
+        await page.keyboard.press('Space');
+        assert.ok(await first.isChecked());
+        noFrame(await appearance(first));
+        assert.match(await first.locator('..').locator('span').last().evaluate(element => getComputedStyle(element).textDecorationLine), /underline/);
+        await page.keyboard.press('Tab');
+        noFrame(await appearance(page.locator('#memberPicker input').nth(1)));
+        await closeDialog(page);
+        noFrame(await appearance(page.locator('[data-action="start"][data-id="waiting"]')));
+        await page.click('#openCreate');
+        const query = page.locator('#restaurantSearchQuery');
+        const defaultField = await appearance(query);
+        assert.ok(!await page.locator('body').evaluate(body => body.classList.contains('keyboard-navigation')));
+        noFrame(defaultField);
+        await query.click();
+        assert.deepEqual(await appearance(query), defaultField, 'pointer focus must not decorate fields');
+        await page.keyboard.press('Tab');
+        noFrame(await appearance(page.locator('#restaurantSearchButton')));
+        assert.match((await appearance(page.locator('#restaurantSearchButton'))).underline, /underline/);
+        await page.keyboard.press('Shift+Tab');
+        const keyboardField = await appearance(query);
+        assert.notEqual(keyboardField.background, defaultField.background);
+        assert.equal(keyboardField.border, defaultField.border, 'normal input border must remain unchanged');
+        noFrame(keyboardField);
+        await closeDialog(page);
+        await page.locator('[data-action="rate"][data-id="running"]').click();
+        const row = page.locator('[data-rating="food"]');
+        const zero = row.locator('[data-score="0"]');
+        noFrame(await appearance(zero));
+        await page.keyboard.press('ArrowRight');
+        const star = row.locator('[data-score="1"]');
+        assert.equal(await page.locator('#value-food').textContent(), '0,5 / 5');
+        noFrame(await appearance(star));
+        const keyboardStar = await appearance(star);
+        await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#value-food').textContent(), '1,0 / 5');
+        await star.click({position: {x: 8, y: 22}});
+        assert.equal(await page.locator('#value-food').textContent(), '0,5 / 5');
+        const pointerStar = await appearance(star);
+        assert.notEqual(pointerStar.background, keyboardStar.background, 'star background feedback is keyboard-only');
+        noFrame(pointerStar);
+        if (width < 1024) {
+          const bounds = await star.boundingBox();
+          await page.touchscreen.tap(bounds.x + 36, bounds.y + 22);
+          assert.equal(await page.locator('#value-food').textContent(), '1,0 / 5');
+          noFrame(await appearance(star));
+        }
+        await closeDialog(page);
+        await navigate(page, 'history');
+        noFrame(await appearance(page.locator('#historyTitle')));
+      } finally { await context.close(); }
+    });
+  }
 
   for (const width of widths) {
     await check(`responsive views and all dialogs at ${width}px`, async () => {
