@@ -55,6 +55,7 @@ const failures = [];
 const pageErrors = [];
 async function check(name, run) {
   if (process.env.FOCUS_ONLY && !name.startsWith('focus marking')) return;
+  if (process.env.CHECK_FILTER && !name.includes(process.env.CHECK_FILTER)) return;
   try { await run(); checks += 1; console.log(`PASS ${name}`); }
   catch (error) { failures.push({name, error: error.stack}); console.error(`FAIL ${name}\n${error.stack}`); }
 }
@@ -438,6 +439,88 @@ async function rateAll(page, value) {
       assert.deepEqual(selected, ['m1', 'm2']);
     } finally { await context.close(); }
   });
+
+  for (const width of [390, 1440]) {
+    await check(`unfinished reviews stay private in the UI until completion at ${width}px`, async () => {
+      const db = data();
+      db.meals.find(meal => meal.id === 'running').creator_member_id = 'm1';
+      db.meal_participants = db.meal_participants.filter(entry => entry.meal_id !== 'running');
+      db.meal_participants.push(...['m1', 'm2', 'm3'].map(member_id => ({meal_id: 'running', member_id})));
+      const creatorComment = 'Verborgener Kommentar des Erstellers';
+      const participantComment = 'Verborgener Kommentar der Teilnehmerin';
+      const finalComment = 'Kommentar der letzten Bewertung';
+      db.ratings.push(makeReview('running', 'm1', [5, 5, 5, 5], creatorComment),
+        makeReview('running', 'm2', [3, 3, 3, 3], participantComment));
+      const {page, context} = await open({width, db, member: 'm3'});
+      const details = page.locator('#detailContent');
+      const openDetails = () => page.locator('[data-action="details"][data-id="running"]:visible').first().click();
+      const onlyOwnReview = async (comment = null) => {
+        assert.equal(await details.locator('.history-result-person').count(), comment ? 1 : 0);
+        assert.equal(await details.locator('.history-result-category').count(), comment ? 4 : 0);
+        assert.equal(await details.locator('.rating-summary').count(), 0, 'no interim average');
+        const text = await details.textContent();
+        for (const other of [creatorComment, participantComment]) {
+          assert.equal(text.includes(other), other === comment, 'other comments must not enter the DOM');
+        }
+        assert.match(text, /Bewertungen anderer.*sobald alle/);
+      };
+      try {
+        assert.match(await page.locator('#pendingList').textContent(), /2 von 3 Bewertungen/);
+        assert.equal(await page.locator('#dashboardGroupAverage').textContent(), '2,0 ★');
+        await openDetails();
+        await onlyOwnReview();
+        assert.match(await details.textContent(), /Du hast noch keine Bewertung abgegeben/);
+        await geometry(page, `unfinished reviews ${width}`);
+        await screenshot(page, `${width}-reviews-before-own-submission`);
+        await changeMember(page, 'm4');
+        await onlyOwnReview();
+        await openDetails();
+        assert.match(await details.textContent(), /Du nimmst an dieser Fressung nicht teil/);
+        assert.equal(await page.locator('[data-action="rate"][data-id="running"]').count(), 0);
+        await changeMember(page, 'm1');
+        await openDetails();
+        await onlyOwnReview(creatorComment);
+        assert.equal(await details.locator('.creator-badge').count(), 1);
+        await screenshot(page, `${width}-reviews-own-only`);
+        await navigate(page, 'history');
+        assert.equal(await page.locator('#history [data-id="running"]').count(), 0);
+        await changeMember(page, 'm2');
+        await onlyOwnReview(participantComment);
+        await page.goBack();
+        await page.locator('#details.active').waitFor();
+        await onlyOwnReview(participantComment);
+        await changeMember(page, 'm3');
+        await onlyOwnReview();
+        await page.locator('[data-action="rate"][data-id="running"]').click();
+        for (const [index, category] of categories.entries()) {
+          const row = page.locator(`[data-rating="${category}"]`);
+          await row.locator('[tabindex="0"]').focus();
+          await page.keyboard.press('Home');
+          for (let step = 0; step < [0, 1, 10, 5][index]; step += 1) await page.keyboard.press('ArrowRight');
+        }
+        await page.fill('#ratingComment', finalComment);
+        await page.click('#saveRating');
+        await page.locator('#history [data-action="details"][data-id="running"]').waitFor({state: 'attached'});
+        assert.equal(await page.evaluate(() => window.__fixture.db.meals.find(meal => meal.id === 'running').status), 'completed');
+        await navigate(page, 'history');
+        await openDetails();
+        assert.equal(await details.locator('.history-result-person').count(), 3);
+        assert.equal(await details.locator('.history-result-category').count(), 12);
+        assert.equal(await details.locator('.creator-badge').count(), 1);
+        for (const comment of [creatorComment, participantComment, finalComment]) {
+          assert.ok((await details.textContent()).includes(comment));
+        }
+        assert.match(await details.textContent(), /Restaurant-Ø: 2,5/);
+        assert.equal(await details.locator('.rating-summary').count(), 1);
+        await geometry(page, `completed reviews ${width}`);
+        await screenshot(page, `${width}-reviews-after-completion`);
+        await changeMember(page, 'm4');
+        await navigate(page, 'history');
+        await openDetails();
+        assert.equal(await details.locator('.history-result-person').count(), 3, 'completed reviews visible to the group');
+      } finally { await context.close(); }
+    });
+  }
 
   await check('completed-only statistics, tied ranks, no external score and history/navigation', async () => {
     const {page, context} = await open();
