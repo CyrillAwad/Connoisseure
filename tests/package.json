@@ -1,0 +1,10 @@
+{
+  "name": "connoisseure-ui-checks",
+  "private": true,
+  "scripts": {
+    "check": "node gui-check.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.58.2"
+  }
+}

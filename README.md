@@ -1,6 +1,35 @@
 # Connoisseure
 
-Statische Frontend-Demo. Die Website liegt als `index.html` im Repository-Root; ein Build-Schritt ist nicht erforderlich.
+Statisches Frontend. `index.html`, `styles.css`, `app.js` und das lokale Auswahlpfeil-Icon `chevron.svg` liegen im Repository-Root; ein Build-Schritt ist nicht erforderlich. Die Oberfläche verwendet lokale SVG-Icons und Systemschriften, ohne zusätzliche UI-CDNs.
+
+## Bedienung
+
+Unter 1024 px gibt es eine einzige feste Navigation für **Dashboard**, **Historie** und **Statistik**. Das Kontosymbol im Kopfbereich öffnet das ausgewählte Profil, **Vorname wechseln** und **Abmelden**; auf größeren Bildschirmen liegen diese Aktionen in der Seitenleiste. Offene Fressungen stehen vor den abgeschlossenen Erlebnissen und Kennzahlen.
+
+Die vier Bewertungskategorien erlauben weiterhin 0 bis 5 Sterne in 0,5er-Schritten: links auf einen Stern tippen für den halben Wert, rechts für den ganzen Wert; **0** setzt null Sterne. Mit Tab wird jede Kategorie erreicht, Pfeiltasten ändern den Wert um 0,5, **Pos1** setzt 0 und **Ende** setzt 5. Enter/Leertaste auf einem Stern wählt den ganzen Wert. Aktueller Wert und Halbsterne bleiben sichtbar. Dialoge unterstützen Escape, halten den Tastaturfokus und geben ihn beim Schließen zurück. Fehlermeldungen bleiben bis zur nächsten Aktion beziehungsweise bis zum Schließen sichtbar.
+
+## Lokale Oberflächenprüfung
+
+Die Website selbst benötigt keine npm-Abhängigkeiten. Die optionalen Browserchecks in `tests/` nutzen nur Playwright als Entwicklungswerkzeug:
+
+```powershell
+npm ci --prefix tests
+node --check app.js
+npm --prefix tests run check
+```
+
+Standardmäßig wird ein lokal installiertes Microsoft Edge verwendet. Für andere Chromium-Installationen kann `BROWSER_CHANNEL` z. B. auf `chrome` gesetzt werden. Der WebKit-Test ist separat möglich:
+
+```powershell
+Set-Location tests
+npx playwright install webkit
+$env:BROWSER_ENGINE = 'webkit'
+npm run check
+```
+
+Der Check startet und beendet seinen eigenen lokalen HTTP-Server unter einem simulierten `/Connoisseure/`-Unterpfad. Sämtliche externen Anfragen werden abgefangen: Supabase wird durch synthetische Mitglieder/Fressungen und RPC-Fixtures ersetzt, OSM durch lokale Antworten. Es werden keine echten Logins, Datenänderungen oder öffentlichen Suchanfragen ausgeführt. Geprüft werden Ansichten und Dialoge bei 320, 375, 390, 768, 1024 und 1440 px, Overflow, Button-Zentrierung/44-px-Touchziele, Fokus/Navigation, Halbsternwerte, Fressungsablauf, Rechte, Durchschnittswerte/Ranking, Mitglieder-Lade-Race sowie OSM-Autofill/Cache/Cooldown. Screenshots und `report.json` landen im temporären Ordner `connoisseure-ui-checks`; `SCREENSHOT_DIR` kann einen anderen Ausgabeordner festlegen.
+
+Die kurzen Viewport-Checks simulieren den verbleibenden Platz bei geöffneter Bildschirmtastatur. Sie ersetzen keinen Test auf einem physischen iOS-/Android-Gerät oder mit einem Screenreader.
 
 ## Veröffentlichung mit GitHub Pages
 
