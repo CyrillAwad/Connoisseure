@@ -25,6 +25,7 @@
   let supabase;
   let authSubscription;
   let activeToken = null;
+  let activationFailed = false;
   let activationId = 0;
   let currentMember = null;
   let members = [];
@@ -187,9 +188,11 @@
   }
 
   async function activateSession(nextSession) {
+    if (nextSession && nextSession.access_token === activeToken && !activationFailed) return;
     const id = ++activationId;
     if (!nextSession) {
       activeToken = null;
+      activationFailed = false;
       currentMember = null;
       members = [];
       meals = [];
@@ -198,8 +201,8 @@
       showAuth();
       return;
     }
-    if (nextSession.access_token === activeToken) return;
     activeToken = nextSession.access_token;
+    activationFailed = false;
     try {
       await fetchMembers();
       if (id !== activationId) return;
@@ -212,7 +215,10 @@
         showMemberGate();
       }
     } catch (error) {
-      if (id === activationId) showAuth(error.message, true);
+      if (id === activationId) {
+        activationFailed = true;
+        showAuth(error.message, true);
+      }
     }
   }
 
@@ -800,23 +806,35 @@
   function bindUi() {
     $('#loginForm').addEventListener('submit', async event => {
       event.preventDefault();
+      if (!supabase) {
+        setMessage($('#authMessage'), 'Die Supabase-Verbindung ist nicht bereit. Prüfe den CDN-Zugriff und lade die Seite erneut.');
+        return;
+      }
       const pin = $('#groupPin').value;
       if (!pin) {
         setMessage($('#authMessage'), 'Bitte gib den Gruppen-PIN ein.');
         return;
       }
       const button = $('#loginButton');
+      const label = button.textContent;
       button.disabled = true;
-      setMessage($('#authMessage'), '');
+      button.textContent = 'Anmeldung läuft …';
+      setMessage($('#authMessage'), 'Anmeldung wird geprüft …');
       try {
         const {data, error} = await supabase.auth.signInWithPassword({email: GROUP_EMAIL, password: pin});
-        $('#groupPin').value = '';
         if (error) throw error;
-        if (data.session) await activateSession(data.session);
+        if (!data?.session) {
+          setMessage($('#authMessage'), 'Supabase hat keine Sitzung zurückgegeben. Prüfe, ob das Gruppen-Konto aktiv ist.');
+          return;
+        }
+        $('#groupPin').value = '';
+        setMessage($('#authMessage'), 'Anmeldung erfolgreich. Gruppenmitglieder werden geladen …');
+        await activateSession(data.session);
       } catch (error) {
         setMessage($('#authMessage'), authErrorMessage(error));
       } finally {
         button.disabled = false;
+        button.textContent = label;
       }
     });
     $('#chooseMember').addEventListener('click', () => {
@@ -868,24 +886,25 @@
 
   async function initialize() {
     configureCreateForm();
-    if (!window.supabase?.createClient) {
-      showAuth('Die Supabase-Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung oder den CDN-Zugriff.');
-      return;
-    }
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     bindUi();
-    const {data, error} = await supabase.auth.getSession();
-    if (error) {
-      showAuth(authErrorMessage(error));
-      return;
-    }
-    const {data: listenerData} = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        window.setTimeout(() => void activateSession(nextSession), 0);
+    try {
+      if (!window.supabase?.createClient) {
+        showAuth('Die Supabase-Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung oder den CDN-Zugriff.');
+        return;
       }
-    });
-    authSubscription = listenerData.subscription;
-    await activateSession(data.session);
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+      const {data, error} = await supabase.auth.getSession();
+      if (error) throw error;
+      const {data: listenerData} = supabase.auth.onAuthStateChange((event, nextSession) => {
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          window.setTimeout(() => void activateSession(nextSession), 0);
+        }
+      });
+      authSubscription = listenerData.subscription;
+      await activateSession(data.session);
+    } catch (error) {
+      showAuth(`Supabase konnte nicht initialisiert werden: ${authErrorMessage(error)}`);
+    }
   }
 
   window.addEventListener('beforeunload', () => authSubscription?.unsubscribe());
