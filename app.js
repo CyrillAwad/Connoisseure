@@ -22,6 +22,7 @@
   const AVATAR_COLORS = ['#e1ae60', '#f0d49c', '#e4beb2', '#bfd1ca', '#b8c6df', '#d8c3df'];
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
+  const icon = name => `<svg class="icon" aria-hidden="true"><use href="#icon-${name}"/></svg>`;
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -43,6 +44,9 @@
   let selectedMealId = null;
   let ratingValues = {};
   let toastTimer;
+  let modalOpener = null;
+  let modalOpenerAction = null;
+  let accountReturnSelector = '.account-menu summary';
   let nominatimRequestQueue = Promise.resolve();
   let nominatimNextRequestAt = 0;
   let nominatimCooldownUntil = 0;
@@ -50,17 +54,27 @@
   let currentViewId = 'dashboard';
   const nominatimSearchCache = new Map();
 
-  function setMessage(element, message) {
+  function setMessage(element, message, {status = false} = {}) {
     element.textContent = message || '';
     element.hidden = !message;
+    element.classList.toggle('status-message', status);
+    element.setAttribute('role', status ? 'status' : 'alert');
   }
 
-  function toast(message) {
+  function toast(message, {error = false} = {}) {
+    const dialogMessage = $('dialog[open] .modal-message');
+    if (error && dialogMessage) {
+      setMessage(dialogMessage, message);
+      return;
+    }
     const element = $('#toast');
-    element.textContent = message;
-    element.classList.add('show');
+    $('#toastMessage').textContent = message;
+    $('#toastMessage').setAttribute('role', error ? 'alert' : 'status');
+    $('#toastMessage').setAttribute('aria-live', error ? 'assertive' : 'polite');
+    element.classList.toggle('error', error);
+    element.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => element.classList.remove('show'), 3800);
+    if (!error) toastTimer = setTimeout(() => { element.hidden = true; }, 8000);
   }
 
   function authErrorMessage(error) {
@@ -86,6 +100,7 @@
   }
 
   function showAuth(message = '', authenticated = false) {
+    $$('dialog[open]').forEach(dialog => dialog.close());
     document.body.classList.remove('is-authenticated');
     $('#authScreen').hidden = false;
     $('#memberScreen').hidden = true;
@@ -101,6 +116,7 @@
     $('#cancelMemberChange').hidden = !currentMember;
     $('#memberLogout').hidden = false;
     populateMemberSelect();
+    requestAnimationFrame(() => ($('#memberChoiceWrap').hidden ? $('#newMemberName') : $('#memberSelect')).focus());
   }
 
   function showApplication() {
@@ -119,9 +135,10 @@
   }
 
   function updateProfile() {
-    const profile = $('.profile');
-    if (!profile || !currentMember) return;
-    profile.innerHTML = `${memberAvatar(currentMember)}<div><strong>${escapeHtml(currentMember.display_name)}</strong><div class="small">Team Connoisseure</div></div><div class="account-actions"><button type="button" data-account-action="change">Vorname wechseln</button><button type="button" data-account-action="logout">Abmelden</button></div>`;
+    if (!currentMember) return;
+    $$('.profile').forEach(profile => {
+      profile.innerHTML = `${memberAvatar(currentMember)}<div class="profile-info"><strong>${escapeHtml(currentMember.display_name)}</strong><div class="small">Team Connoisseure</div></div><div class="account-actions"><button type="button" data-account-action="change">Vorname wechseln</button><button type="button" data-account-action="logout">Abmelden</button></div>`;
+    });
   }
 
   function populateMemberSelect() {
@@ -137,6 +154,11 @@
       if (member.id === currentMember?.id || member.id === getStoredMemberId()) option.selected = true;
       select.appendChild(option);
     });
+    updateSelectedMemberName();
+  }
+
+  function updateSelectedMemberName() {
+    $('#selectedMemberName').textContent = members.find(member => member.id === $('#memberSelect').value)?.display_name || '';
   }
 
   function getStoredMemberId() {
@@ -245,8 +267,16 @@
     }
     currentViewId = viewId;
     $$('.view').forEach(view => view.classList.toggle('active', view.id === viewId));
-    $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === viewId));
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    $$('[data-view]').forEach(button => {
+      const active = button.dataset.view === viewId;
+      button.classList.toggle('active', active);
+      if (active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    if (document.body.classList.contains('is-authenticated')) {
+      $(`#${viewId} h1`)?.focus({preventScroll: true});
+    }
+    window.scrollTo({top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
   }
 
   function initializeNavigation() {
@@ -263,12 +293,36 @@
     setView(initialView, {historyMode: 'none'});
   }
 
-  function openModal(id) {
-    $(`#${id}`).classList.add('open');
+  function openModal(id, opener) {
+    const dialog = $(`#${id}`);
+    modalOpener = opener || document.activeElement;
+    modalOpenerAction = modalOpener.dataset.action
+      ? {action: modalOpener.dataset.action, id: modalOpener.dataset.id}
+      : null;
+    setMessage(dialog.querySelector('.modal-message'), '');
+    $('#toast').hidden = true;
+    dialog.showModal();
+    document.body.classList.add('modal-open');
+    const firstControl = dialog.querySelector('.modal-body input:not(:disabled), .modal-body button, .modal-body textarea');
+    firstControl?.focus();
   }
 
   function closeModal(id) {
-    $(`#${id}`).classList.remove('open');
+    $(`#${id}`).close();
+  }
+
+  function keepModalInputVisible() {
+    const dialog = $('dialog[open]');
+    const input = document.activeElement;
+    const body = dialog?.querySelector('.modal-body');
+    if (!body?.contains(input) || !input.matches('input, textarea, select')) return;
+    const fieldBounds = input.getBoundingClientRect();
+    const bodyBounds = body.getBoundingClientRect();
+    if (fieldBounds.bottom > bodyBounds.bottom - 12) {
+      body.scrollTop += fieldBounds.bottom - bodyBounds.bottom + 12;
+    } else if (fieldBounds.top < bodyBounds.top + 12) {
+      body.scrollTop += fieldBounds.top - bodyBounds.top - 12;
+    }
   }
 
   function memberById(id) {
@@ -302,9 +356,9 @@
   }
 
   function mealStatus(meal) {
-    if (meal.status === 'waiting') return '<span class="status waiting">● Wartet auf Start</span>';
-    if (meal.status === 'running') return '<span class="status running">● Bewertung läuft</span>';
-    return '<span class="status complete">✓ Abgeschlossen</span>';
+    if (meal.status === 'waiting') return '<span class="status waiting">Wartet auf Start</span>';
+    if (meal.status === 'running') return '<span class="status running">Bewertung läuft</span>';
+    return `<span class="status complete">${icon('check')}Abgeschlossen</span>`;
   }
 
   function validMapsUrl(value) {
@@ -337,7 +391,7 @@
     return Array.from({length: 5}, (_, index) => {
       const remaining = score - index;
       const state = remaining >= 1 ? '' : remaining >= 0.5 ? 'half' : 'empty';
-      return `<span class="${state}">★</span>`;
+      return `<span class="star ${state}">${icon('star')}${state === 'half' ? `<span class="star-fill">${icon('star')}</span>` : ''}</span>`;
     }).join('');
   }
 
@@ -351,12 +405,12 @@
     let action = '';
     if (meal.status === 'waiting') {
       action = isCreator
-        ? `<button class="start-btn" data-action="start" data-id="${escapeHtml(meal.id)}">Fressung starten</button>`
+        ? `<button class="start-btn" data-action="start" data-id="${escapeHtml(meal.id)}">${icon('arrow')}Fressung starten</button>`
         : '<span class="status">Wartet auf den Ersteller</span>';
     } else if (selected && !hasRated) {
       action = `<button class="rate-btn" data-action="rate" data-id="${escapeHtml(meal.id)}">Bewerten</button>`;
     } else if (selected) {
-      action = '<span class="status complete">✓ Du hast bewertet</span>';
+      action = `<span class="status complete">${icon('check')}Du hast bewertet</span>`;
     } else {
       action = '<span class="status">Nicht dabei</span>';
     }
@@ -365,10 +419,10 @@
       : `${ratedCount} von ${selectedParticipants.length} Bewertungen`;
     const percent = selectedParticipants.length ? Math.round(ratedCount / selectedParticipants.length * 100) : 0;
     const place = meal.place ? escapeHtml(meal.place) : 'Ort nicht angegeben';
-    const note = meal.note ? `<p>${escapeHtml(meal.note)}</p>` : '';
+    const note = meal.note ? `<p class="pending-note">${escapeHtml(meal.note)}</p>` : '';
     return `<article class="pending ${meal.status === 'running' ? 'started' : ''}">
       <div class="pending-top"><div><h3>${escapeHtml(meal.restaurant_name)}</h3><p>${place} · vorgeschlagen von ${escapeHtml(creator.display_name)}</p>${note}</div>${mealStatus(meal)}</div>
-      <div class="small" style="display:block;margin-top:11px">${progress}</div>
+      <div class="small pending-progress">${progress}</div>
       ${meal.status === 'running' ? `<div class="progress-line"><i style="width:${percent}%"></i></div>` : ''}
       <div class="pending-actions">${action}<button class="details-btn" data-action="details" data-id="${escapeHtml(meal.id)}">Details ansehen</button></div>
     </article>`;
@@ -380,8 +434,8 @@
     const reviewCount = mealRatings(meal.id).filter(review => review.member_id !== meal.creator_member_id).length;
     return `<article class="meal">
       <div><h3>${escapeHtml(meal.restaurant_name)}</h3><p>${escapeHtml(meal.place || 'Ort nicht angegeben')} · vorgeschlagen von ${escapeHtml(creator.display_name)}</p><span class="pill">${escapeHtml(formatDate(meal.completed_at || meal.created_at))}</span></div>
-      <div class="score">${score === null ? '<span class="small">Kein Restaurant-Score</span>' : `<div class="stars">${renderStars(score)}</div><small>${formatScore(score)} aus ${reviewCount} Bewertungen</small>`}
-        <button class="link" data-action="details" data-id="${escapeHtml(meal.id)}">Details →</button>
+      <div class="score">${score === null ? '<span class="small">Kein Restaurant-Score</span>' : `<div class="stars" role="img" aria-label="${formatScore(score)} von 5 Sternen">${renderStars(score)}</div><small>${formatScore(score)} aus ${reviewCount} Bewertungen</small>`}
+        <button class="link" data-action="details" data-id="${escapeHtml(meal.id)}">Details ${icon('arrow')}</button>
       </div>
     </article>`;
   }
@@ -390,13 +444,13 @@
     const creator = memberById(meal.creator_member_id);
     const score = mealScore(meal);
     const count = mealRatings(meal.id).length;
-    return `<article class="card">
+    return `<article class="card history-card">
       <div class="eyebrow">${escapeHtml(formatDate(meal.completed_at || meal.created_at))}</div>
       <h2>${escapeHtml(meal.restaurant_name)}</h2>
       <p class="intro">${escapeHtml(meal.note || meal.place || 'Keine Notiz hinterlegt.')}</p>
-      ${score === null ? '<p class="small">Noch kein Restaurant-Score verfügbar.</p>' : `<div class="stars">${renderStars(score)} <small style="color:var(--muted)">${formatScore(score)}</small></div>`}
+      ${score === null ? '<p class="small">Kein Restaurant-Score: keine Bewertung anderer Teilnehmender.</p>' : `<div class="history-score"><span class="stars" role="img" aria-label="${formatScore(score)} von 5 Sternen">${renderStars(score)}</span><strong>${formatScore(score)}</strong></div>`}
       <span class="pill">${count} ${count === 1 ? 'Bewertung' : 'Bewertungen'} · ${escapeHtml(creator.display_name)}</span>
-      <button class="details-btn" data-action="details" data-id="${escapeHtml(meal.id)}" style="margin-top:14px;width:100%;padding:10px 12px;border-radius:9px;font-weight:700">Ergebnisse ansehen →</button>
+      <button class="details-btn" data-action="details" data-id="${escapeHtml(meal.id)}">Ergebnisse ansehen ${icon('arrow')}</button>
     </article>`;
   }
 
@@ -422,11 +476,11 @@
 
     const grid = $('#dashboard .grid');
     grid.innerHTML = `<div class="card">
-      <div class="card-head"><div><h2>Letzte Fressungen</h2><span class="small">Abgeschlossene gemeinsame Erlebnisse</span></div><button class="link" data-view-link="history">Alle ansehen →</button></div>
+      <div class="card-head"><div><h2>Letzte Fressungen</h2><span class="small">Abgeschlossene gemeinsame Erlebnisse</span></div><button class="link" data-view-link="history">Alle ansehen ${icon('arrow')}</button></div>
       <div id="latestMeals"></div>
     </div><div>
       <div class="card"><div class="card-head"><div><h2>Leaderboard</h2><span class="small">Ø-Restaurant-Score abgeschlossener Empfehlungen</span></div></div><div id="leaderboardList"></div></div>
-      <div class="card activity" style="margin-top:22px"><h2>Aktivität</h2><div class="activity-list" id="activityList"></div></div>
+      <div class="card activity"><h2>Aktivität</h2><div class="activity-list" id="activityList"></div></div>
     </div>`;
     const latest = completed.slice().sort((a, b) => new Date(b.completed_at || b.created_at) - new Date(a.completed_at || a.created_at)).slice(0, 3);
     $('#latestMeals').innerHTML = latest.length ? latest.map(renderLatestMeal).join('') : '<div class="empty-state">Noch keine abgeschlossenen Fressungen.</div>';
@@ -445,7 +499,7 @@
   }
 
   function renderRatingRow(category) {
-    return `<div class="rating-row"><span>${category.label}</span><span class="rating-stars" data-rating="${category.key}"></span></div>`;
+    return `<div class="rating-row"><span class="rating-label" id="label-${category.key}">${category.label}</span><output class="rating-value" id="value-${category.key}" aria-live="polite">Noch nicht bewertet</output><div class="rating-stars" role="group" aria-labelledby="label-${category.key}" aria-describedby="value-${category.key}" data-rating="${category.key}"></div></div>`;
   }
 
   function setupRatingStars(row) {
@@ -456,12 +510,18 @@
       zero.classList.toggle('on', value === 0);
       zero.setAttribute('aria-pressed', String(value === 0));
       row.querySelectorAll('button[data-score]').forEach(button => {
-        if (button.className === 'zero-rating') return;
         const score = Number(button.dataset.score);
-        button.classList.toggle('on', value !== null && score <= Math.floor(value));
-        button.classList.toggle('half', value !== null && value % 1 !== 0 && score === Math.ceil(value));
-        button.setAttribute('aria-pressed', String(value === score || (score === Math.ceil(value) && value % 1 !== 0)));
+        const selected = score === Math.ceil(value ?? 0);
+        button.tabIndex = selected ? 0 : -1;
+        if (score === 0) return;
+        const half = value !== null && value % 1 !== 0 && score === Math.ceil(value);
+        const star = button.querySelector('.star');
+        star.classList.toggle('empty', value === null || score > Math.ceil(value));
+        star.classList.toggle('half', half);
+        star.querySelector('.star-fill').hidden = !half;
+        button.setAttribute('aria-pressed', String(value !== null && selected));
       });
+      $(`#value-${row.dataset.rating}`).textContent = value === null ? 'Noch nicht bewertet' : `${formatScore(value)} / 5`;
     };
     const zero = document.createElement('button');
     zero.type = 'button';
@@ -479,34 +539,43 @@
       const star = document.createElement('button');
       star.type = 'button';
       star.dataset.score = String(score);
-      star.textContent = '★';
+      star.innerHTML = `<span class="star empty">${icon('star')}<span class="star-fill" hidden>${icon('star')}</span></span>`;
       star.setAttribute('aria-label', `${score} Sterne; linke Hälfte für ${formatScore(score - 0.5)} Sterne`);
       star.addEventListener('click', event => {
         const bounds = star.getBoundingClientRect();
-        const half = event.clientX < bounds.left + bounds.width / 2;
+        const half = event.detail !== 0 && event.clientX < bounds.left + bounds.width / 2;
         value = half ? score - 0.5 : score;
         ratingValues[row.dataset.rating] = value;
         draw();
       });
       row.appendChild(star);
     }
+    row.addEventListener('keydown', event => {
+      const steps = {ArrowRight: 0.5, ArrowUp: 0.5, ArrowLeft: -0.5, ArrowDown: -0.5};
+      if (!(event.key in steps) && event.key !== 'Home' && event.key !== 'End') return;
+      event.preventDefault();
+      value = event.key === 'Home' ? 0 : event.key === 'End' ? 5 : Math.min(5, Math.max(0, (value ?? 0) + steps[event.key]));
+      ratingValues[row.dataset.rating] = value;
+      draw();
+      row.querySelector('button[tabindex="0"]').focus();
+    });
     draw();
   }
 
-  function openRating(meal) {
+  function openRating(meal, opener) {
     selectedMealId = meal.id;
     ratingValues = {};
     $('#ratingTitle').textContent = `${meal.restaurant_name} bewerten`;
     $('#ratingModal .rating-list').innerHTML = CATEGORY_DEFS.map(renderRatingRow).join('');
     $$('#ratingModal .rating-stars').forEach(setupRatingStars);
     $('#ratingComment').value = '';
-    openModal('ratingModal');
+    openModal('ratingModal', opener);
   }
 
   function renderParticipantList(meal) {
     const selected = mealParticipants(meal.id);
     if (!selected.length) return '<p class="small">Noch keine Teilnehmenden eingetragen.</p>';
-    return `<h2 style="margin-top:24px">Teilnehmende</h2><div class="member-list">${selected.map(participant => {
+    return `<h2>Teilnehmende</h2><div class="member-list">${selected.map(participant => {
       const member = memberById(participant.member_id);
       const review = memberRating(meal.id, participant.member_id);
       return `<div class="member">${memberAvatar(member)}<span class="member-info"><b>${escapeHtml(member.display_name)}</b><span class="member-state">${review ? 'Bewertung abgegeben' : 'Bewertung ausstehend'}</span></span><span class="${review ? 'check' : 'pending-state'}">${review ? '✓ Fertig' : '● Offen'}</span></div>`;
@@ -529,7 +598,7 @@
     </article>`;
   }
 
-  function renderDetails(meal) {
+  function renderDetails(meal, {navigate = true} = {}) {
     selectedMealId = meal.id;
     const creator = memberById(meal.creator_member_id);
     const reviews = mealRatings(meal.id).slice().sort((a, b) => new Date(a.rated_at) - new Date(b.rated_at));
@@ -540,7 +609,7 @@
         const values = externalReviews.map(review => Number(review[category.key])).filter(Number.isFinite);
         const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
         return `<div><b>${average === null ? '—' : `${formatScore(average)} ★`}</b>${category.label}</div>`;
-      }).join('')}</div><p class="small" style="margin-top:15px">Restaurant-Ø: ${score === null ? '—' : `${formatScore(score)} ★`}. Erstellerbewertungen bleiben sichtbar, zählen aber nicht in die Durchschnitte.</p>`
+      }).join('')}</div><p class="small">Restaurant-Ø: ${score === null ? '—' : `${formatScore(score)} ★`}. Erstellerbewertungen bleiben sichtbar, zählen aber nicht in die Durchschnitte.</p>`
       : meal.status === 'completed'
         ? '<p class="small">Kein Restaurant-Durchschnitt verfügbar: Es gibt keine Bewertung von einem anderen Teilnehmenden.</p>'
         : '<p class="small">Restaurant-Durchschnitte erscheinen nach Abschluss und schließen Erstellerbewertungen aus.</p>';
@@ -555,13 +624,12 @@
       ? '<div class="confirm-box">Die Teilnehmenden werden beim Start festgelegt. Nur der Ersteller kann die Fressung starten.</div>'
       : renderParticipantList(meal);
     $('#detailContent').innerHTML = `<div class="eyebrow">Fressung im Überblick</div>
-      <div class="topbar"><div><h1 class="headline">${escapeHtml(meal.restaurant_name)}</h1><p class="intro">${escapeHtml(meal.place || 'Ort nicht angegeben')} · vorgeschlagen von ${escapeHtml(creator.display_name)}</p></div>${mealStatus(meal)}</div>
-      <div class="detail-layout"><div><div class="card">
+      <div class="topbar"><div><h1 class="headline" id="detailsTitle" tabindex="-1">${escapeHtml(meal.restaurant_name)}</h1><p class="intro">${escapeHtml(meal.place || 'Ort nicht angegeben')} · vorgeschlagen von ${escapeHtml(creator.display_name)}</p></div>${mealStatus(meal)}</div>
+      <div class="detail-layout"><div class="card detail-reviews"><h2>Bewertungen</h2>${summaries}${reviewContent}</div><div class="card detail-secondary">
         <div class="detail-meta"><div class="meta-box"><b>Ort</b>${location}</div><div class="meta-box"><b>Vorgeschlagen</b>${escapeHtml(formatDate(meal.created_at))}</div><div class="meta-box"><b>Notiz</b>${escapeHtml(meal.note || 'Keine Notiz hinterlegt.')}</div><div class="meta-box"><b>Status</b>${mealStatus(meal)}</div></div>
         ${waitingInfo}
-      </div></div>
-      <div class="card"><h2>Bewertungen</h2>${summaries}${reviewContent}</div></div>`;
-    setView('details');
+      </div></div>`;
+    if (navigate) setView('details');
   }
 
   function renderStatistics() {
@@ -632,7 +700,7 @@
       ? ranking.map(person => {
         const label = person.average === null ? '—' : `${formatScore(person.average)} ★`;
         const barWidth = person.average === null ? 0 : Math.round(person.average / 5 * 100);
-        return `<div class="rank"><div class="rank-num">${person.rank ?? '—'}</div>${memberAvatar(person.member)}<div class="rank-info"><strong>${escapeHtml(person.member.display_name)}${person.member.id === currentMember.id ? ' · du' : ''}</strong><span class="small">${person.recommendations} ${person.recommendations === 1 ? 'Empfehlung' : 'Empfehlungen'} · ${person.receivedRatings} Bewertungen anderer</span><div class="progress"><i style="width:${barWidth}%"></i></div></div><strong>${label}</strong></div>`;
+        return `<div class="rank"><div class="rank-num">${person.rank ?? '—'}</div>${memberAvatar(person.member)}<div class="rank-info"><strong>${escapeHtml(person.member.display_name)}${person.member.id === currentMember.id ? ' · du' : ''}</strong><span class="small">${person.recommendations} ${person.recommendations === 1 ? 'Empfehlung' : 'Empfehlungen'} · ${person.receivedRatings} Bewertungen anderer</span><div class="progress"><i style="width:${barWidth}%"></i></div></div><strong class="rank-score">${label}</strong></div>`;
       }).join('')
       : '<div class="empty-state">Noch keine bewerteten Empfehlungen für das Leaderboard.</div>';
     const myStats = ranking.find(person => person.member.id === currentMember.id);
@@ -663,6 +731,7 @@
     $('#dashboard .headline').textContent = `Schön, dich zu sehen, ${currentMember.display_name.split(/\s+/)[0]}.`;
     renderDashboard();
     renderHistory();
+    if (currentViewId === 'details' && mealById(selectedMealId)) renderDetails(mealById(selectedMealId), {navigate: false});
     updateProfile();
     bindNavigation();
   }
@@ -677,7 +746,7 @@
     });
   }
 
-  function openStart(meal) {
+  function openStart(meal, opener) {
     selectedMealId = meal.id;
     const selectedIds = new Set(mealParticipants(meal.id).map(participant => participant.member_id));
     selectedIds.add(meal.creator_member_id);
@@ -685,12 +754,12 @@
       <label class="member-option"><input type="checkbox" value="${escapeHtml(member.id)}" ${selectedIds.has(member.id) ? 'checked' : ''}>
         ${memberAvatar(member)}<span><b>${escapeHtml(member.display_name)}</b><small class="small">${member.id === meal.creator_member_id ? 'Ersteller' : ''}</small></span>
       </label>`).join('');
-    openModal('startModal');
+    openModal('startModal', opener);
   }
 
-  function openCreateModal() {
+  function openCreateModal(event) {
     $('#creatorName').value = currentMember?.display_name || '';
-    openModal('createModal');
+    openModal('createModal', event?.currentTarget);
   }
 
   async function startMeal() {
@@ -698,10 +767,11 @@
     if (!meal || !currentMember) return;
     const participantIds = $$('#memberPicker input:checked').map(input => input.value);
     if (!participantIds.length) {
-      toast('Wähle mindestens eine teilnehmende Person aus.');
+      toast('Wähle mindestens eine teilnehmende Person aus.', {error: true});
       return;
     }
     const button = $('#confirmStart');
+    setMessage($('#startModal .modal-message'), '');
     button.disabled = true;
     try {
       const {error} = await supabase.rpc('start_meal', {
@@ -714,7 +784,7 @@
       await refreshAndRender();
       toast('Fressung gestartet. Die ausgewählten Personen können jetzt bewerten.');
     } catch (error) {
-      toast(error.message);
+      toast(error.message, {error: true});
     } finally {
       button.disabled = false;
     }
@@ -724,10 +794,11 @@
     const meal = mealById(selectedMealId);
     if (!meal || !currentMember) return;
     if (CATEGORY_DEFS.some(category => !Number.isFinite(ratingValues[category.key]))) {
-      toast('Bitte bewerte alle vier Kategorien.');
+      toast('Bitte bewerte alle vier Kategorien.', {error: true});
       return;
     }
     const button = $('#saveRating');
+    setMessage($('#ratingModal .modal-message'), '');
     button.disabled = true;
     try {
       const {error} = await supabase.rpc('submit_meal_rating', {
@@ -747,7 +818,7 @@
         ? 'Bewertung gespeichert. Die Fressung ist abgeschlossen!'
         : `Bewertung gespeichert. Noch ${waitingFor} ${waitingFor === 1 ? 'Bewertung steht' : 'Bewertungen stehen'} aus.`);
     } catch (error) {
-      toast(error.message);
+      toast(error.message, {error: true});
     } finally {
       button.disabled = false;
     }
@@ -758,14 +829,15 @@
     const place = $('#mealPlace').value.trim();
     const mapsUrl = $('#mapsUrl').value.trim();
     if (!restaurant || !place) {
-      toast('Bitte gib Restaurant und Ort an.');
+      toast('Bitte gib Restaurant und Ort an.', {error: true});
       return;
     }
     if (mapsUrl && !validMapsUrl(mapsUrl)) {
-      toast('Der Maps-Link muss eine gültige HTTP- oder HTTPS-Adresse sein.');
+      toast('Der Maps-Link muss eine gültige HTTP- oder HTTPS-Adresse sein.', {error: true});
       return;
     }
     const button = $('#saveCreate');
+    setMessage($('#createModal .modal-message'), '');
     button.disabled = true;
     try {
       const {error} = await supabase.from('meals').insert({
@@ -786,7 +858,7 @@
       await refreshAndRender();
       toast('Fressung angelegt und für die Gruppe bereitgestellt.');
     } catch (error) {
-      toast(error.message);
+      toast(error.message, {error: true});
     } finally {
       button.disabled = false;
     }
@@ -828,7 +900,7 @@
   async function signOut() {
     if (!supabase) return;
     const {error} = await supabase.auth.signOut();
-    if (error) toast(authErrorMessage(error));
+    if (error) toast(authErrorMessage(error), {error: true});
   }
 
   function handleAction(event) {
@@ -836,8 +908,8 @@
     if (!target) return;
     const action = target.dataset.action;
     const meal = mealById(target.dataset.id);
-    if (action === 'start' && meal) openStart(meal);
-    if (action === 'rate' && meal) openRating(meal);
+    if (action === 'start' && meal) openStart(meal, target);
+    if (action === 'rate' && meal) openRating(meal, target);
     if (action === 'details' && meal) renderDetails(meal);
   }
 
@@ -857,7 +929,7 @@
       const label = button.textContent;
       button.disabled = true;
       button.textContent = 'Anmeldung läuft …';
-      setMessage($('#authMessage'), 'Anmeldung wird geprüft …');
+      setMessage($('#authMessage'), 'Anmeldung wird geprüft …', {status: true});
       try {
         const {data, error} = await supabase.auth.signInWithPassword({email: GROUP_EMAIL, password: pin});
         if (error) throw error;
@@ -866,7 +938,7 @@
           return;
         }
         $('#groupPin').value = '';
-        setMessage($('#authMessage'), 'Anmeldung erfolgreich. Gruppenmitglieder werden geladen …');
+        setMessage($('#authMessage'), 'Anmeldung erfolgreich. Gruppenmitglieder werden geladen …', {status: true});
         await activateSession(data.session);
       } catch (error) {
         setMessage($('#authMessage'), authErrorMessage(error));
@@ -883,6 +955,7 @@
       }
       void enterApplication(member);
     });
+    $('#memberSelect').addEventListener('change', updateSelectedMemberName);
     $('#createMember').addEventListener('click', () => void createMember());
     $('#newMemberName').addEventListener('keydown', event => {
       if (event.key === 'Enter') {
@@ -894,6 +967,7 @@
       if (!currentMember) return;
       $('#memberScreen').hidden = true;
       showApplication();
+      $(accountReturnSelector).focus();
     });
     $('#memberLogout').addEventListener('click', () => void signOut());
     $('#failedLogout').addEventListener('click', () => void signOut());
@@ -910,9 +984,52 @@
     $('#openCreate').addEventListener('click', openCreateModal);
     $('#openCreateHistory').addEventListener('click', openCreateModal);
     $$('[data-close]').forEach(button => button.addEventListener('click', () => closeModal(button.dataset.close)));
+    $('#dismissToast').addEventListener('click', () => { $('#toast').hidden = true; });
+    $$('dialog').forEach(dialog => {
+      dialog.addEventListener('focusin', keepModalInputVisible);
+      dialog.addEventListener('close', () => {
+        document.body.classList.remove('modal-open');
+        const replacement = modalOpenerAction
+          ? $$('[data-action]').find(button => button.dataset.action === modalOpenerAction.action && button.dataset.id === modalOpenerAction.id)
+          : null;
+        const target = modalOpener?.isConnected ? modalOpener : replacement || $(`#${currentViewId} h1`);
+        if (target?.getClientRects().length) target.focus({preventScroll: true});
+      });
+      window.addEventListener('resize', keepModalInputVisible);
+      window.visualViewport?.addEventListener('resize', keepModalInputVisible);
+      dialog.addEventListener('keydown', event => {
+        if (event.key !== 'Tab') return;
+        const controls = [...dialog.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea, select, a[href]')]
+          .filter(control => control.tabIndex >= 0 && control.getClientRects().length);
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      });
+    });
+    document.addEventListener('keydown', event => {
+      const menu = $('.account-menu');
+      if (event.key === 'Escape' && menu.open) {
+        menu.open = false;
+        menu.querySelector('summary').focus();
+      }
+    });
     document.addEventListener('click', event => {
+      const menu = $('.account-menu');
+      if (!menu.contains(event.target)) menu.open = false;
       const accountAction = event.target.closest('[data-account-action]');
-      if (accountAction?.dataset.accountAction === 'change') showMemberGate();
+      if (accountAction) menu.open = false;
+      if (accountAction?.dataset.accountAction === 'change') {
+        accountReturnSelector = accountAction.closest('.sidebar')
+          ? '.sidebar [data-account-action="change"]'
+          : '.account-menu summary';
+        showMemberGate();
+      }
       if (accountAction?.dataset.accountAction === 'logout') void signOut();
       handleAction(event);
     });
@@ -923,17 +1040,16 @@
     $('#createModal .form-grid').innerHTML = `
       <div class="field full restaurant-search">
         <label for="restaurantSearchQuery">Restaurant oder Adresse auf OpenStreetMap suchen</label>
-        <div class="osm-search-form"><input id="restaurantSearchQuery" type="search" maxlength="160" autocomplete="off" placeholder="z. B. Ramen Jun, Berlin"><button class="secondary" id="restaurantSearchButton" type="button">Suchen</button></div>
+        <div class="osm-search-form"><input id="restaurantSearchQuery" type="search" maxlength="160" autocomplete="off" placeholder="z. B. Ramen Jun, Berlin"><button class="secondary" id="restaurantSearchButton" type="button">${icon('search')}Suchen</button></div>
         <div id="restaurantSearchStatus" class="small osm-status" role="status" aria-live="polite">Die Suche startet erst nach Klick auf Suchen.</div>
         <div id="restaurantSearchResults" class="osm-results" aria-label="Suchergebnisse"></div>
         <p class="osm-attribution small">Suchergebnisse: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap-Mitwirkende</a> · <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">Nominatim</a></p>
       </div>
-      <div class="field"><label for="restaurant">Restaurant</label><input id="restaurant" maxlength="160" placeholder="z. B. Ramen Jun"></div>
-      <div class="field"><label for="creatorName">Ersteller</label><input id="creatorName" value="" disabled></div>
+      <div class="field"><label for="restaurant">Restaurant</label><input id="restaurant" maxlength="160" placeholder="z. B. Ramen Jun" required></div>
       <div class="field"><label for="mealPlace">Ort</label><input id="mealPlace" maxlength="200" placeholder="z. B. Berlin-Kreuzberg" required></div>
       <div class="field"><label for="mapsUrl">OpenStreetMap-Link (optional)</label><input id="mapsUrl" type="url" placeholder="https://www.openstreetmap.org/..."></div>
       <div class="field full"><label for="note">Notiz für die Gruppe (optional)</label><textarea id="note" maxlength="2000" placeholder="Warum müssen wir genau dort hin?"></textarea></div>`;
-    $('#ratingModal .modal-head .small').textContent = 'Klicke links auf einen Stern für einen halben, rechts für einen ganzen Stern.';
+    $('#createModal .form-grid').insertAdjacentHTML('beforeend', '<div class="field full"><label for="creatorName">Ersteller · dein ausgewähltes Profil</label><input id="creatorName" value="" disabled></div>');
   }
 
   function normalizedSearchQuery(query) {
