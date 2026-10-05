@@ -36,14 +36,14 @@
     <div class="auth-card">
       <div class="eyebrow">Dein Profil auf diesem Gerät</div>
       <h1 id="memberTitle">Wer bist du?</h1>
-      <p class="intro">Wähle deinen Namen oder trage dich einmalig in die Gruppe ein.</p>
-      <div class="field" id="memberChoiceWrap"><label for="memberSelect">Vorhandener Name</label><select id="memberSelect"></select></div>
+      <p class="intro">Wähle deinen Vornamen oder trage ihn einmalig in die Gruppe ein.</p>
+      <div class="field" id="memberChoiceWrap"><label for="memberSelect">Vorhandener Vorname</label><select id="memberSelect"></select></div>
       <p class="auth-message" id="memberMessage" role="alert" hidden></p>
       <div class="auth-actions"><button class="primary" id="chooseMember" type="button">Weiter</button><button class="secondary" id="cancelMemberChange" type="button" hidden>Abbrechen</button></div>
       <div class="member-create">
-        <strong>Noch kein Name dabei?</strong>
-        <div class="field"><label for="newMemberName">Dein Name</label><input id="newMemberName" maxlength="80" autocomplete="name" placeholder="Vor- und Nachname"></div>
-        <button class="secondary" id="createMember" type="button" style="margin-top:10px">Namen eintragen</button>
+        <strong>Noch nicht dabei?</strong>
+        <div class="field"><label for="newMemberName">Dein Vorname</label><input id="newMemberName" maxlength="80" autocomplete="given-name" placeholder="z. B. Cerell"></div>
+        <button class="secondary" id="createMember" type="button" style="margin-top:10px">Vorname eintragen</button>
       </div>
       <button class="ghost" id="memberLogout" type="button" style="margin-top:12px">Abmelden</button>
     </div>
