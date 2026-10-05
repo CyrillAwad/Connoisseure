@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#3e5541">
+  <title>Connoisseure · Fressungen</title>
+  <style>
+    :root{--ink:#20251f;--muted:#71786e;--paper:#f6f3ec;--card:#fffdf8;--line:#e5e0d6;--sage:#667b62;--sage-dark:#3e5541;--gold:#d39b43;--coral:#d86d55;--blue:#54758a;--shadow:0 18px 45px #33402b12}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer;border:0}.app{display:flex;min-height:100vh}.sidebar{width:248px;flex:0 0 248px;background:var(--sage-dark);color:#f7f4eb;padding:28px 20px;display:flex;flex-direction:column}.brand{font:700 25px Georgia,serif}.brand span{color:#e6b86c}.tagline{font-size:12px;color:#c8d0c2}.nav{margin-top:48px;display:grid;gap:7px}.nav button{padding:12px 14px;border-radius:12px;background:transparent;color:#dce5d5;text-align:left}.nav button.active,.nav button:hover{background:#ffffff18;color:#fff}.nav b{display:inline-block;width:24px;color:#e8b765}.profile{margin-top:auto;border-top:1px solid #ffffff2b;padding-top:18px;display:flex;gap:10px;align-items:center}.avatar{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;background:#e1ae60;color:#3d4d3b;font-weight:700;flex:0 0 auto}.small{font-size:12px;color:var(--muted)}.sidebar .small{color:#c9d2c5}.main{flex:1;padding:34px clamp(20px,5vw,70px);max-width:1500px;overflow:hidden}.view{display:none}.view.active{display:block}.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}.eyebrow{text-transform:uppercase;letter-spacing:1.7px;font-size:11px;color:var(--sage);font-weight:700}.headline{font:700 clamp(30px,4vw,47px)/1.05 Georgia,serif;margin:8px 0}.intro{color:var(--muted);max-width:600px}.primary{background:var(--coral);color:#fff;border-radius:12px;padding:13px 18px;font-weight:700;box-shadow:0 8px 20px #d86d5530}.primary:hover{filter:brightness(.95)}.secondary{background:#eeeae1;color:var(--ink);border-radius:10px;padding:11px 15px}.ghost{background:transparent;color:var(--sage-dark);font-weight:700;padding:8px 0}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:30px 0}.stat,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.stat{padding:20px}.stat strong{display:block;font:700 30px Georgia,serif}.stat span{color:var(--muted);font-size:13px}.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr);gap:22px}.card{padding:24px}.card h2{font:700 22px Georgia,serif;margin:0 0 5px}.card h3{font:700 19px Georgia,serif;margin:0 0 3px}.card-head{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:18px}.link{background:none;color:var(--sage-dark);font-weight:700;padding:0}.pending-wrap{margin:0 0 22px}.pending-list{display:grid;gap:12px}.pending{border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:14px;background:#fffaf0;padding:16px}.pending.started{border-left-color:var(--blue);background:#f6fafb}.pending-top{display:flex;justify-content:space-between;gap:12px;align-items:start}.pending p{margin:3px 0;color:var(--muted);font-size:13px}.pending-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}.pending-actions button{padding:9px 12px;border-radius:9px;font-size:13px;font-weight:700}.start-btn{background:var(--sage-dark);color:#fff}.rate-btn{background:var(--coral);color:#fff}.details-btn{background:#eeeae1;color:var(--ink)}.disabled-btn{background:#eeeae1;color:#8c9188;cursor:not-allowed}.status{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:4px 9px;font-size:11px;font-weight:800;white-space:nowrap}.status.waiting{background:#f2e3bf;color:#76551e}.status.running{background:#dcebf0;color:#3b6174}.status.complete{background:#dfeddc;color:#42613f}.progress-line{height:6px;background:#e9e6dc;border-radius:99px;overflow:hidden;margin-top:10px}.progress-line i{display:block;height:100%;background:var(--sage);border-radius:99px}.meal{display:flex;justify-content:space-between;gap:18px;padding:17px 0;border-top:1px solid var(--line)}.meal:first-of-type{border-top:0}.meal p{margin:0;color:var(--muted);font-size:13px}.pill{display:inline-block;border-radius:99px;padding:4px 9px;background:#eef2e9;color:var(--sage-dark);font-size:11px;font-weight:700;margin-top:8px}.score{text-align:right;white-space:nowrap}.stars{color:var(--gold);letter-spacing:1px;font-size:17px}.score small{display:block;color:var(--muted);font-size:11px}.rank{display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line)}.rank:first-of-type{border-top:0}.rank-num{font:700 20px Georgia,serif;color:var(--gold);width:22px}.rank .avatar{width:32px;height:32px}.rank-info{flex:1}.rank-info strong{display:block}.progress{height:6px;background:#ece8df;border-radius:99px;margin-top:5px;overflow:hidden}.progress i{display:block;height:100%;background:var(--sage);border-radius:99px}.activity{margin-top:22px}.notification{display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--line);font-size:13px}.notification:first-of-type{border-top:0}.notification b{display:block}.notification span{color:var(--muted)}.history-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:28px}.detail-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr);gap:20px;margin-top:24px}.detail-meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}.meta-box{border:1px solid var(--line);border-radius:12px;padding:12px}.meta-box b{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}.member-list{display:grid;gap:10px;margin-top:17px}.member{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.member:first-child{border-top:0}.member .avatar{width:32px;height:32px}.member-info{flex:1}.member-info b{display:block}.member-state{font-size:12px;color:var(--muted)}.check{color:var(--sage);font-weight:800}.pending-state{color:var(--gold);font-weight:800}.rating-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:18px}.rating-summary div{background:#f4f2eb;border-radius:10px;padding:10px;font-size:13px}.rating-summary b{display:block;font:700 20px Georgia,serif}.map{height:125px;border-radius:13px;background:linear-gradient(135deg,#dbe5d2,#f0d9ba);position:relative;overflow:hidden;padding:14px;color:#536451}.map:before{content:'';position:absolute;inset:30px -20px 0;background:repeating-linear-gradient(35deg,transparent 0 18px,#ffffff80 19px 21px);transform:rotate(-5deg)}.map:after{content:'⌖';position:absolute;left:50%;top:42%;font-size:27px;color:var(--coral)}.modal-backdrop{position:fixed;inset:0;background:#18201580;display:none;align-items:center;justify-content:center;padding:18px;z-index:5}.modal-backdrop.open{display:flex}.modal{background:var(--card);width:min(690px,100%);max-height:92vh;overflow:auto;border-radius:22px;padding:26px;box-shadow:0 25px 80px #0004}.modal-head{display:flex;justify-content:space-between;align-items:start}.close{background:#f0ede5;border-radius:50%;width:32px;height:32px;color:var(--muted);font-size:20px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:20px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:700;color:var(--muted)}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}.field textarea{min-height:82px;resize:vertical}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}.member-picker{display:grid;gap:8px;margin-top:8px}.member-option{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:11px;padding:10px;cursor:pointer}.member-option:has(input:checked){border-color:var(--sage);background:#f2f7ef}.member-option input{accent-color:var(--sage);width:18px;height:18px}.member-option span:nth-child(2){flex:0 0 auto}.confirm-box{margin-top:16px;padding:13px;border-radius:11px;background:#f5f2e9;color:var(--muted);font-size:13px}.rating-list{display:grid;gap:9px;margin-top:7px}.rating-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--line)}.rating-row:first-child{border-top:0}.rating-stars button{background:none;color:#d9d5cb;font-size:25px;padding:0 1px;line-height:1}.rating-stars button.on{color:var(--gold)}.rating-stars button.half{color:var(--gold);text-shadow:7px 0 0 #d9d5cb;clip-path:inset(0 50% 0 0)}.toast{position:fixed;right:22px;bottom:22px;max-width:min(390px,calc(100vw - 44px));background:var(--sage-dark);color:#fff;padding:13px 17px;border-radius:12px;box-shadow:var(--shadow);display:none;z-index:8}.toast.show{display:block;animation:fade 4s both}@keyframes fade{0%{opacity:0;transform:translateY(8px)}10%,82%{opacity:1;transform:none}100%{opacity:0}}
+    @media(max-width:800px){.app{display:block}.sidebar{width:auto;padding:18px 17px;display:block}.brand{display:inline-block}.nav{margin:20px -4px 0;display:flex;overflow:auto;gap:4px}.nav button{white-space:nowrap;padding:10px 12px}.profile{display:none}.main{padding:23px 16px 88px}.topbar{display:block}.topbar .primary{margin-top:17px;width:100%}.summary{grid-template-columns:1fr;margin:23px 0}.grid,.detail-layout{grid-template-columns:1fr}.history-grid{grid-template-columns:1fr}.form-grid,.detail-meta{grid-template-columns:1fr}.field.full{grid-column:auto}.card{padding:19px}.pending-top{display:block}.pending-top .status{margin-top:9px}.meal{align-items:flex-start}.score .stars{font-size:15px}.bottom-nav{position:fixed!important;display:flex!important;bottom:0;left:0;right:0;z-index:4;background:#fffdf8;border-top:1px solid var(--line);padding:8px 10px;justify-content:space-around;box-shadow:0 -6px 20px #0000000d}.bottom-nav button{color:var(--sage-dark);font-size:11px;text-align:center;background:none}.bottom-nav button b{display:block;font-size:18px}.modal{padding:21px}.pending-actions button{flex:1}.rating-summary{grid-template-columns:1fr 1fr}}
+    .history-result-list{display:grid;gap:12px;margin-top:18px}.history-result-person{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fffefa}.history-result-person-head{display:flex;align-items:center;gap:10px}.history-result-person-head .avatar{width:36px;height:36px}.history-result-person-title{flex:1;min-width:0}.history-result-person-title b{display:block}.creator-badge{display:inline-block;margin-top:3px;border-radius:99px;padding:3px 8px;background:#f2e3bf;color:#76551e;font-size:10px;font-weight:700}.history-result-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:13px}.history-result-category{min-width:0;background:#f6f3ec;border:1px solid var(--line);border-radius:10px;padding:9px}.history-result-category small{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.history-result-stars{white-space:nowrap;letter-spacing:1px;font-size:16px;line-height:1.2}.history-result-stars .empty{color:#d9d5cb}.history-result-stars .half{background:linear-gradient(90deg,var(--gold) 50%,#d9d5cb 50%);background-clip:text;-webkit-background-clip:text;color:transparent}.history-result-score{font-size:12px;font-weight:700;color:var(--ink);margin-left:4px}.history-result-comment{margin:11px 0 0;border-left:3px solid #e4c37c;padding:8px 10px;color:var(--muted);font-size:13px;background:#fffaf0;border-radius:0 8px 8px 0}
+    .stats-category-card,.stats-members-card{margin-top:18px}.stats-categories{display:grid;gap:16px}.stats-category{display:grid;grid-template-columns:minmax(105px,.7fr) minmax(90px,2fr) 44px;align-items:center;gap:12px}.stats-category-label{font-weight:700}.stats-category-value{text-align:right;font-weight:700}.stats-category .progress{margin:0;height:8px}.member-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}.member-stat-card{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fffefa}.member-stat-head{display:flex;align-items:center;gap:10px}.member-stat-head .avatar{width:38px;height:38px}.member-stat-head strong{display:block}.member-stat-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:15px}.member-stat-metric{background:#f6f3ec;border-radius:10px;padding:9px 7px;min-width:0}.member-stat-metric b{display:block;font:700 18px Georgia,serif;white-space:nowrap}.member-stat-metric span{display:block;color:var(--muted);font-size:10px;line-height:1.3;margin-top:3px}.member-stat-note{margin:10px 0 0;color:var(--muted);font-size:11px}.stats-empty{padding:16px;border-radius:12px;background:#f6f3ec;color:var(--muted);font-size:13px}
+    @media(max-width:800px){.member-stats{grid-template-columns:1fr}}
+    @media(max-width:420px){.history-result-person{padding:11px}.history-result-category{padding:8px}.history-result-stars{font-size:14px}.stats-category{grid-template-columns:minmax(90px,.8fr) minmax(60px,1fr) 38px;gap:8px}.member-stat-card{padding:12px}.member-stat-metrics{gap:5px}.member-stat-metric{padding:8px 5px}.member-stat-metric b{font-size:16px}}
+    @media(min-width:801px){.bottom-nav{display:none}}
+  </style>
+</head>
+<body>
+  <div class="app"><aside class="sidebar"><div class="brand">connoisseure<span>°</span></div><div class="tagline">Gemeinsam gut essen.</div><nav class="nav"><button class="active" data-view="dashboard"><b>⌂</b>Dashboard</button><button data-view="history"><b>◷</b>Historie</button><button data-view="stats"><b>⌁</b>Statistik</button></nav><div class="profile"><div class="avatar">LK</div><div><strong>Lea König</strong><div class="small">Team Connoisseure</div></div></div></aside>
+    <main class="main">
+      <section id="dashboard" class="view active">
+        <div class="topbar"><div><div class="eyebrow">Donnerstag, 05. Oktober</div><h1 class="headline">Schön, dich zu sehen, Lea.</h1><p class="intro">Entdeckt neue Orte, bewertet ehrlich und sammelt gemeinsam Erinnerungen.</p></div><button class="primary" id="openCreate">＋ Neue Fressung</button></div>
+        <div class="summary">
+          <div class="stat"><strong id="pendingCount">2</strong><span>ausstehende Fressungen</span></div>
+          <div class="stat"><strong id="dashboardGroupAverage">—</strong><span>Ø-Restaurant-Score der Gruppe</span></div>
+          <div class="stat"><strong id="dashboardPersonalRank">—</strong><span id="dashboardPersonalAverage">dein Platz · Ø deiner Empfehlungen</span></div>
+        </div>
+        <div class="pending-wrap"><div class="card-head"><div><h2>Ausstehende Fressungen</h2><span class="small">Bewertet wird erst nach dem Start.</span></div><span class="status running" id="pendingSummary">2 offen</span></div><div class="pending-list" id="pendingList"></div></div>
+        <div class="grid">
+          <div class="card"><div class="card-head"><div><h2>Letzte Fressungen</h2><span class="small">Abgeschlossene gemeinsame Erlebnisse</span></div><button class="link" data-view-link="history">Alle ansehen →</button></div><article class="meal"><div><h3>Ramen Jun</h3><p>Berlin · vorgeschlagen von Max</p><span class="pill">vor 3 Tagen</span></div><div class="score"><div class="stars">★★★★★</div><small>4,8 von 4 Bewertungen</small></div></article><article class="meal"><div><h3>Osteria Verde</h3><p>Neukölln · vorgeschlagen von dir</p><span class="pill">vor 2 Wochen</span></div><div class="score"><div class="stars">★★★★<span style="color:#d9d5cb">★</span></div><small>4,2 von 3 Bewertungen</small></div></article></div>
+          <div>
+            <div class="card"><div class="card-head"><div><h2>Leaderboard</h2><span class="small">Sortiert nach Ø-Restaurant-Score</span></div></div><div class="leaderboard-list" id="leaderboardList"></div></div>
+            <div class="card" style="margin-top:22px"><h2>Benachrichtigungen</h2><div class="notification"><div class="avatar" style="background:#f0d49c">MS</div><div><b>Max hat „Ramen Jun“ gestartet</b><span>Du kannst jetzt bewerten.</span></div></div><div class="notification"><div class="avatar" style="background:#e4beb2">AS</div><div><b>Neue Fressung von Ana</b><span>Wartet auf den Start.</span></div></div></div>
+          </div>
+        </div>
+      </section>
+      <section id="history" class="view"><div class="topbar"><div><div class="eyebrow">Eure kulinarische Zeitreise</div><h1 class="headline">Historie</h1><p class="intro">Nur vollständig bewertete Fressungen landen hier.</p></div><button class="primary" id="openCreateHistory">＋ Neue Fressung</button></div><div class="history-grid"><div class="card"><div class="eyebrow">September 2025</div><h2>Ramen Jun</h2><p class="intro">Intensive Tonkotsu-Brühe, gemütlicher Laden und gute Gyoza.</p><div class="stars">★★★★★ <small style="color:var(--muted)">4,8</small></div><span class="pill">4 Bewertungen · Max</span></div><div class="card"><div class="eyebrow">August 2025</div><h2>Osteria Verde</h2><p class="intro">Handgemachte Pasta und eine Weinkarte, bei der man länger bleiben möchte.</p><div class="stars">★★★★<span style="color:#d9d5cb">★</span> <small style="color:var(--muted)">4,2</small></div><span class="pill">3 Bewertungen · Lea</span></div></div></section>
+      <section id="stats" class="view">
+        <div class="eyebrow">Zahlen, die schmecken</div><h1 class="headline">Statistik</h1>
+        <p class="intro">Die Übersicht zählt nur abgeschlossene Fressungen. Erstellerbewertungen sind sichtbar, fließen aber nicht in die Restaurantwerte ein.</p>
+        <div class="summary">
+          <div class="stat"><strong id="statsMeals">0</strong><span>abgeschlossene Fressungen</span></div>
+          <div class="stat"><strong id="statsRatings">0</strong><span>abgegebene Bewertungen</span></div>
+          <div class="stat"><strong id="statsRestaurants">0</strong><span>entdeckte Restaurants</span></div>
+        </div>
+        <div class="card stats-category-card"><div class="card-head"><div><h2>Gruppen-Ø nach Kategorie</h2><span class="small">Ohne Erstellerbewertungen</span></div></div><div id="categoryStats" class="stats-categories"></div></div>
+        <div class="card stats-members-card"><div class="card-head"><div><h2>Statistik pro Person</h2><span class="small">Empfehlungen und Ø Restaurant-Score</span></div></div><p class="small">Der persönliche Ø ist der durchschnittliche Restaurant-Score für abgeschlossene Empfehlungen, bewertet von den anderen Teilnehmenden. Jede Fressung zählt gleich – unabhängig von der Teilnehmerzahl.</p><div id="memberStats" class="member-stats"></div></div>
+      </section>
+      <section id="details" class="view"><button class="ghost" data-view-link="dashboard">← Zurück zum Dashboard</button><div id="detailContent"></div></section>
+    </main></div><nav class="bottom-nav nav"><button class="active" data-view="dashboard"><b>⌂</b>Home</button><button data-view="history"><b>◷</b>Historie</button><button data-view="stats"><b>⌁</b>Statistik</button></nav>
+  <div class="modal-backdrop" id="createModal"><div class="modal"><div class="modal-head"><div><div class="eyebrow">Gemeinsames Erlebnis planen</div><h2>Neue Fressung</h2><p class="small">Die Bewertung beginnt erst nach dem gemeinsamen Start.</p></div><button class="close" data-close="createModal">×</button></div><div class="form-grid"><div class="field"><label>Restaurant</label><input id="restaurant" placeholder="z. B. Ramen Jun"></div><div class="field"><label>Ersteller</label><select id="creator"><option value="lea">Lea König (du)</option><option value="max">Max Schneider</option><option value="ana">Ana Silva</option></select></div><div class="field full"><label>Ort oder Google-Maps-Link</label><div class="map">Restaurant auf der Karte suchen …</div></div><div class="field full"><label>Notiz für die Gruppe</label><textarea id="note" placeholder="Warum müssen wir genau dort hin?"></textarea></div></div><div class="modal-actions"><button class="secondary" data-close="createModal">Abbrechen</button><button class="primary" id="saveCreate">Fressung anlegen</button></div></div></div>
+  <div class="modal-backdrop" id="startModal"><div class="modal"><div class="modal-head"><div><div class="eyebrow">Nächster Schritt</div><h2>Fressung starten</h2><p class="small">Wähle aus, wer tatsächlich dabei war.</p></div><button class="close" data-close="startModal">×</button></div><div class="member-picker" id="memberPicker"></div><div class="confirm-box"><b>Wichtig:</b> Nach dem Start kann die Teilnehmerliste nicht mehr geändert werden. Die ausgewählten Personen erhalten danach die Bewertungsaktion.</div><div class="modal-actions"><button class="secondary" data-close="startModal">Abbrechen</button><button class="primary" id="confirmStart">Fressung starten</button></div></div></div>
+  <div class="modal-backdrop" id="ratingModal"><div class="modal"><div class="modal-head"><div><div class="eyebrow">Deine Perspektive</div><h2 id="ratingTitle">Fressung bewerten</h2><p class="small">Klicke auf einen Stern, doppelklicke für einen halben Stern.</p></div><button class="close" data-close="ratingModal">×</button></div><div class="rating-list"><div class="rating-row"><span>Essen</span><span class="rating-stars" data-rating="food"></span></div><div class="rating-row"><span>Service</span><span class="rating-stars" data-rating="service"></span></div><div class="rating-row"><span>Ambiente</span><span class="rating-stars" data-rating="ambience"></span></div><div class="rating-row"><span>Preis-Leistung</span><span class="rating-stars" data-rating="value"></span></div></div><div class="field" style="margin-top:14px"><label>Dein Kommentar (optional)</label><textarea id="ratingComment" placeholder="Was ist dir im Gedächtnis geblieben?"></textarea></div><div class="confirm-box">Als Ersteller darfst du bewerten. Deine Bewertung wird angezeigt, zählt aber nicht in den Restaurant-Durchschnitt.</div><div class="modal-actions"><button class="secondary" data-close="ratingModal">Abbrechen</button><button class="primary" id="saveRating">Bewertung speichern</button></div></div></div><div class="toast" id="toast"></div>
+  <script>
+    const members={lea:{name:'Lea König',initials:'LK',color:'#e1ae60'},max:{name:'Max Schneider',initials:'MS',color:'#f0d49c'},ana:{name:'Ana Silva',initials:'AS',color:'#e4beb2'},jonas:{name:'Jonas Weber',initials:'JW',color:'#bfd1ca'}};let currentUser='lea',selectedMeal=null,ratings={};let meals=[{id:1,name:'Osteria Verde',place:'Neukölln',note:'Handgemachte Pasta und eine schöne Weinkarte.',creator:'lea',status:'waiting',participants:[],rated:[]},{id:2,name:'Khao San',place:'Kreuzberg',note:'Knuspriges Hähnchen und frische Kräuter.',creator:'ana',status:'running',participants:['ana','lea','max'],rated:['ana','max']}];const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>e.classList.remove('show'),3800)}function setView(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));$$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'})}function open(id){$('#'+id).classList.add('open')}function close(id){$('#'+id).classList.remove('open')}function mealStatus(m){return m.status==='waiting'?'<span class="status waiting">● Wartet auf Start</span>':m.status==='running'?'<span class="status running">● Bewertung läuft</span>':'<span class="status complete">✓ Abgeschlossen</span>'}function pendingCard(m){const c=members[m.creator],isCreator=m.creator===currentUser,isSelected=m.participants.includes(currentUser),hasRated=m.rated.includes(currentUser);let action='';if(m.status==='waiting')action=isCreator?`<button class="start-btn" data-action="start" data-id="${m.id}">Fressung starten</button>`:'<button class="disabled-btn" data-action="blocked">Bewerten</button>';else if(m.status==='running')action=isSelected&&!hasRated?`<button class="rate-btn" data-action="rate" data-id="${m.id}">Bewerten</button>`:isSelected?'<span class="status complete">✓ Du hast bewertet</span>':'<span class="status">Nicht dabei</span>';else action=`<button class="details-btn" data-action="details" data-id="${m.id}">Details ansehen</button>`;const progress=m.status==='waiting'?'Noch keine Teilnehmer ausgewählt':`${m.rated.length} von ${m.participants.length} Bewertungen`;return `<article class="pending ${m.status==='running'?'started':''}"><div class="pending-top"><div><h3>${esc(m.name)}</h3><p>${esc(m.place)} · vorgeschlagen von ${esc(c.name)}</p><p>${esc(m.note)}</p></div>${mealStatus(m)}</div><div class="small" style="display:block;margin-top:11px">${progress}</div>${m.status==='running'?`<div class="progress-line"><i style="width:${Math.round(m.rated.length/m.participants.length*100)}%"></i></div>`:''}<div class="pending-actions">${action}<button class="details-btn" data-action="details" data-id="${m.id}">Details ansehen</button></div></article>`}function render(){const list=meals.filter(m=>m.status!=='complete');$('#pendingList').innerHTML=list.length?list.map(pendingCard).join(''):'<div class="card"><p style="margin:0;color:var(--muted)">Keine ausstehenden Fressungen. Zeit für einen neuen Vorschlag!</p></div>';$('#pendingCount').textContent=list.length;$('#pendingSummary').textContent=list.length+' offen';$$('[data-action]').forEach(b=>b.addEventListener('click',handleAction))}function handleAction(e){const b=e.currentTarget,a=b.dataset.action,id=Number(b.dataset.id);if(a==='blocked'){toast('Die Fressung wurde noch nicht gestartet. Bitte warte, bis der Ersteller die Teilnehmer ausgewählt hat.');return}if(a==='start'){selectedMeal=meals.find(m=>m.id===id);openStart(selectedMeal);return}if(a==='rate'){selectedMeal=meals.find(m=>m.id===id);openRating(selectedMeal);return}if(a==='details'){selectedMeal=meals.find(m=>m.id===id);renderDetails(selectedMeal);setView('details')}}function openStart(m){$('#memberPicker').innerHTML=Object.entries(members).map(([id,x])=>`<label class="member-option"><input type="checkbox" value="${id}" ${id===m.creator?'checked':''}><span class="avatar" style="background:${x.color}">${x.initials}</span><span><b>${x.name}</b><small class="small">${id===m.creator?'Ersteller':''}</small></span></label>`).join('');open('startModal')}function openRating(m){$('#ratingTitle').textContent=m.name+' bewerten';ratings={};$$('#ratingModal .rating-stars').forEach(setupStars);$('#ratingComment').value='';open('ratingModal')}function setupStars(row){let value=0;row.innerHTML='';for(let i=1;i<=5;i++){const star=document.createElement('button');star.type='button';star.textContent='★';star.setAttribute('aria-label',i+' Sterne');star.addEventListener('click',()=>{value=i;ratings[row.dataset.rating]=value;draw()});star.addEventListener('dblclick',()=>{value=i-.5;ratings[row.dataset.rating]=value;draw()});row.appendChild(star)}function draw(){row.querySelectorAll('button').forEach((s,i)=>{s.classList.toggle('on',i<Math.floor(value));s.classList.toggle('half',value%1!==0&&i===Math.floor(value))})}}function renderDetails(m){const c=members[m.creator];const membersHtml=m.status==='running'?`<h2 style="margin-top:24px">Teilnehmende</h2><div class="member-list">${m.participants.map(id=>{const x=members[id],done=m.rated.includes(id);return `<div class="member"><span class="avatar" style="background:${x.color}">${x.initials}</span><span class="member-info"><b>${x.name}</b><span class="member-state">${done?'Bewertung abgegeben':'Bewertung ausstehend'}</span></span><span class="${done?'check':'pending-state'}">${done?'✓ Fertig':'● Offen'}</span></div>`}).join('')}</div>`:'';$('#detailContent').innerHTML=`<div class="eyebrow">Fressung im Überblick</div><div class="topbar"><div><h1 class="headline">${esc(m.name)}</h1><p class="intro">${esc(m.place)} · vorgeschlagen von ${esc(c.name)}</p></div>${mealStatus(m)}</div><div class="detail-layout"><div><div class="card"><div class="map"></div><div class="detail-meta"><div class="meta-box"><b>Notiz</b>${esc(m.note)}</div><div class="meta-box"><b>Status</b>${mealStatus(m)}</div></div>${m.status==='waiting'?'<div class="confirm-box">Die Teilnehmerliste wird erst beim Start festgelegt. Der Ersteller muss die Fressung starten, bevor Bewertungen möglich sind.</div>':''}${membersHtml}</div></div><div class="card"><h2>Bewertungen</h2>${m.status==='complete'?'<div class="rating-summary"><div><b>4,8 ★</b>Essen</div><div><b>4,5 ★</b>Service</div><div><b>4,7 ★</b>Ambiente</div><div><b>4,2 ★</b>Preis-Leistung</div></div><p class="small" style="margin-top:18px">Die Erstellerbewertung ist sichtbar, aber nicht im Durchschnitt enthalten.</p>':'<p style="color:var(--muted)">Die Ergebnisse erscheinen hier, sobald alle ausgewählten Personen bewertet haben.</p>'}</div></div>`}
+    $('#confirmStart').addEventListener('click',()=>{const chosen=$$('#memberPicker input:checked').map(i=>i.value);if(!chosen.length){toast('Wähle mindestens eine teilnehmende Person aus.');return}selectedMeal.participants=chosen;selectedMeal.status='running';selectedMeal.rated=[];close('startModal');render();toast('Fressung gestartet. Die ausgewählten Personen können jetzt bewerten.');});$('#saveRating').addEventListener('click',()=>{if(['food','service','ambience','value'].some(k=>!ratings[k])){toast('Bitte bewerte alle vier Kategorien.');return}selectedMeal.rated=[...new Set([...selectedMeal.rated,currentUser])];close('ratingModal');if(selectedMeal.rated.length===selectedMeal.participants.length){selectedMeal.status='complete';toast('Bewertung gespeichert – die Fressung ist abgeschlossen!')}else toast('Bewertung gespeichert. Noch '+(selectedMeal.participants.length-selectedMeal.rated.length)+' Bewertung ausstehend.');render()});$('#saveCreate').addEventListener('click',()=>{const name=$('#restaurant').value.trim();if(!name){toast('Bitte gib ein Restaurant ein.');return}const creator=$('#creator').value;meals.unshift({id:Date.now(),name,place:'Noch kein Ort hinterlegt',note:$('#note').value.trim()||'Noch keine Notiz hinterlegt.',creator,status:'waiting',participants:[],rated:[]});close('createModal');$('#restaurant').value='';$('#note').value='';render();toast('Fressung angelegt und für alle als ausstehend gespeichert.')});$('#openCreate').addEventListener('click',()=>open('createModal'));$('#openCreateHistory').addEventListener('click',()=>open('createModal'));$$('[data-close]').forEach(b=>b.addEventListener('click',()=>close(b.dataset.close)));$$('[data-view], [data-view-link]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view||b.dataset.viewLink)));render();
+  </script>
+  <script>
+    (() => {
+      const categories = ['Essen','Service','Ambiente','Preis-Leistung'];
+      const historicalResults = [
+        {name:'Ramen Jun', score:4.8, creator:'max', people:[
+          {id:'max', scores:[5,4.5,5,4.5], comment:'Brühe mit ordentlich Wumms und sehr gute Gyoza.'},
+          {id:'lea', scores:[4.5,5,4.5,4], comment:'Super gemütlich, ich würde wieder hingehen.'},
+          {id:'ana', scores:[5,4.5,5,4.5], comment:'Tolle Aromen und schneller Service.'},
+          {id:'jonas', scores:[4.5,4.5,4.5,4], comment:'Etwas laut, aber das Essen war stark.'}
+        ]},
+        {name:'Osteria Verde', score:4.2, creator:'lea', people:[
+          {id:'lea', scores:[4.5,4,4.5,4], comment:'Handgemachte Pasta, schöne Weinkarte.'},
+          {id:'max', scores:[4,4.5,4,3.5], comment:'Lecker, aber für die Portion etwas teuer.'},
+          {id:'ana', scores:[4,4,4.5,4], comment:'Ruhiger Abend und sehr freundliches Team.'}
+        ]}
+      ];
+      const historyGrid = document.querySelector('#history .history-grid');
+      const modal = document.createElement('div');
+      modal.className = 'modal-backdrop';
+      modal.id = 'historyResultModal';
+      modal.innerHTML = '<div class="modal"><div class="modal-head"><div><div class="eyebrow">Abgeschlossenes Ergebnis</div><h2 id="historyResultTitle"></h2><p class="small">Alle ausgewählten Personen haben bewertet.</p></div><button class="close" id="closeHistoryResult" aria-label="Ergebnisse schließen">×</button></div><div id="historyResultBody"></div></div>';
+      document.body.appendChild(modal);
+      document.querySelector('#closeHistoryResult').addEventListener('click', () => modal.classList.remove('open'));
+
+      const formatScore = score => score.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1});
+      const renderStars = score => Array.from({length:5}, (_, index) => {
+        const remainder = score - index;
+        const state = remainder >= 1 ? '' : remainder >= 0.5 ? 'half' : 'empty';
+        return `<span class="${state}">★</span>`;
+      }).join('');
+
+      const scoreKeys = ['food','service','ambience','value'];
+      const demoReviews = {
+        2:[
+          {id:'ana',scores:[4.5,4.5,4,4],comment:'Frische Kräuter und angenehme Schärfe.'},
+          {id:'max',scores:[4,4.5,4,4.5],comment:'Gutes Essen und große Portionen.'}
+        ]
+      };
+      meals.forEach(meal => {
+        if (demoReviews[meal.id] && !meal.reviews) meal.reviews = demoReviews[meal.id];
+      });
+      const originalRender = render;
+      render = function() {
+        meals.sort((left, right) => Number(right.status === 'running') - Number(left.status === 'running'));
+        originalRender();
+        if (window.renderStatistics) window.renderStatistics();
+      };
+      render();
+      const rankRows = $$('#dashboard .rank');
+      let leaderboardList = document.querySelector('#leaderboardList');
+      if (!leaderboardList) {
+        const leaderboard = rankRows[0] && rankRows[0].parentElement;
+        leaderboardList = document.createElement('div');
+        leaderboardList.id = 'leaderboardList';
+        rankRows.forEach(row => row.remove());
+        if (leaderboard) leaderboard.appendChild(leaderboardList);
+      }
+
+      const renderStatistics = () => {
+        const completedMeals = [
+          ...historicalResults.map(result => ({
+            name:result.name,
+            creator:result.creator,
+            score:result.score,
+            reviews:result.people.map(person => ({id:person.id, scores:person.scores}))
+          })),
+          ...meals.filter(meal => meal.status === 'complete').map(meal => ({
+            name:meal.name,
+            creator:meal.creator,
+            score:null,
+            reviews:meal.reviews || []
+          }))
+        ];
+        const byMember = Object.fromEntries(Object.keys(members).map(id => [id, {
+          recommendations:0,
+          restaurantScoreTotal:0,
+          scoredRecommendations:0,
+          receivedRatings:0
+        }]));
+        const categoryTotals = categories.map(() => ({sum:0, count:0}));
+        const restaurantNames = new Set();
+        const restaurantScores = [];
+        let totalRatings = 0;
+
+        completedMeals.forEach(meal => {
+          const creator = byMember[meal.creator];
+          if (creator) creator.recommendations++;
+          restaurantNames.add(meal.name.trim().toLocaleLowerCase());
+          const individualScores = [];
+          meal.reviews.forEach(review => {
+            totalRatings++;
+            if (review.id === meal.creator || !byMember[meal.creator]) return;
+            const scoreValues = Array.isArray(review.scores)
+              ? review.scores
+              : scoreKeys.map(key => review.scores && review.scores[key]);
+            if (scoreValues.length !== categories.length || scoreValues.some(score => !Number.isFinite(score))) return;
+            individualScores.push(scoreValues.reduce((sum, score) => sum + score, 0) / categories.length);
+            scoreValues.forEach((score, index) => {
+              categoryTotals[index].sum += score;
+              categoryTotals[index].count++;
+            });
+            byMember[meal.creator].receivedRatings++;
+          });
+          const restaurantScore = Number.isFinite(meal.score)
+            ? meal.score
+            : individualScores.length
+              ? individualScores.reduce((sum, score) => sum + score, 0) / individualScores.length
+              : null;
+          if (restaurantScore !== null) {
+            restaurantScores.push(restaurantScore);
+            if (creator) {
+              creator.restaurantScoreTotal += restaurantScore;
+              creator.scoredRecommendations++;
+            }
+          }
+        });
+
+        document.querySelector('#statsMeals').textContent = completedMeals.length;
+        document.querySelector('#statsRatings').textContent = totalRatings;
+        document.querySelector('#statsRestaurants').textContent = restaurantNames.size;
+        const groupAverage = restaurantScores.length
+          ? restaurantScores.reduce((sum, score) => sum + score, 0) / restaurantScores.length
+          : null;
+        document.querySelector('#dashboardGroupAverage').textContent = groupAverage === null ? '—' : `${formatScore(groupAverage)} ★`;
+
+        const ranking = Object.entries(byMember).map(([id, stats]) => ({
+          id,
+          ...stats,
+          average:stats.scoredRecommendations ? stats.restaurantScoreTotal / stats.scoredRecommendations : null
+        })).sort((left, right) => {
+          if (left.average === null) return right.average === null ? members[left.id].name.localeCompare(members[right.id].name) : 1;
+          if (right.average === null) return -1;
+          return right.average - left.average || members[left.id].name.localeCompare(members[right.id].name);
+        });
+        let currentRank = 0;
+        let previousAverage = null;
+        ranking.forEach((person, index) => {
+          if (person.average !== null) {
+            const displayedAverage = Number(person.average.toFixed(1));
+            if (previousAverage === null || displayedAverage !== previousAverage) currentRank = index + 1;
+            person.rank = currentRank;
+            previousAverage = displayedAverage;
+          } else {
+            person.rank = null;
+          }
+        });
+        leaderboardList.innerHTML = ranking.map(person => {
+          const member = members[person.id];
+          const scoreLabel = person.average === null ? '—' : `${formatScore(person.average)} ★`;
+          const width = person.average === null ? 0 : Math.round(person.average / 5 * 100);
+          const recommendationLabel = person.recommendations === 1 ? 'Empfehlung' : 'Empfehlungen';
+          return `<div class="rank"><div class="rank-num">${person.rank === null ? '—' : person.rank}</div><div class="avatar" style="background:${member.color}">${member.initials}</div><div class="rank-info"><strong>${esc(member.name)}${person.id === currentUser ? ' · du' : ''}</strong><span class="small">${person.recommendations} ${recommendationLabel} · ${person.receivedRatings} Bewertungen anderer</span><div class="progress"><i style="width:${width}%"></i></div></div><strong>${scoreLabel}</strong></div>`;
+        }).join('');
+        const myStats = ranking.find(person => person.id === currentUser);
+        document.querySelector('#dashboardPersonalRank').textContent = myStats && myStats.rank !== null ? `#${myStats.rank}` : '—';
+        document.querySelector('#dashboardPersonalAverage').textContent = `dein Platz · Ø ${myStats && myStats.average !== null ? `${formatScore(myStats.average)} ★` : '—'} für deine Empfehlungen`;
+
+        document.querySelector('#categoryStats').innerHTML = categoryTotals.map((category, index) => {
+          const average = category.count ? category.sum / category.count : null;
+          return average === null
+            ? `<div class="stats-category"><span class="stats-category-label">${categories[index]}</span><span class="small">Noch keine Bewertungen</span><span class="stats-category-value">—</span></div>`
+            : `<div class="stats-category"><span class="stats-category-label">${categories[index]}</span><div class="progress"><i style="width:${average / 5 * 100}%"></i></div><span class="stats-category-value">${formatScore(average)} ★</span></div>`;
+        }).join('');
+        document.querySelector('#memberStats').innerHTML = Object.entries(members).map(([id, member]) => {
+          const stats = byMember[id];
+          const average = stats.scoredRecommendations
+            ? stats.restaurantScoreTotal / stats.scoredRecommendations
+            : null;
+          return `<article class="member-stat-card">
+            <div class="member-stat-head"><span class="avatar" style="background:${member.color}">${member.initials}</span><div><strong>${esc(member.name)}</strong><span class="small">Abgeschlossene Empfehlungen</span></div></div>
+            <div class="member-stat-metrics">
+              <div class="member-stat-metric"><b>${stats.recommendations}</b><span>Empfehlungen</span></div>
+              <div class="member-stat-metric"><b>${average === null ? '—' : `${formatScore(average)} ★`}</b><span>Ø Restaurant-Score</span></div>
+              <div class="member-stat-metric"><b>${stats.receivedRatings}</b><span>Bewertungen anderer Mitglieder</span></div>
+            </div>
+            <p class="member-stat-note">Ø Restaurant-Score deiner abgeschlossenen Empfehlungen; Erstellerbewertungen sind nicht eingerechnet.</p>
+          </article>`;
+        }).join('');
+      };
+      window.renderStatistics = renderStatistics;
+
+      document.querySelector('#saveRating').addEventListener('click', () => {
+        if (!selectedMeal || scoreKeys.some(key => !Number.isFinite(ratings[key]))) return;
+        selectedMeal.reviews ||= [];
+        if (selectedMeal.reviews.some(review => review.id === currentUser)) return;
+        selectedMeal.reviews.push({
+          id:currentUser,
+          scores:scoreKeys.map(key => ratings[key]),
+          comment:document.querySelector('#ratingComment').value.trim()
+        });
+      }, true);
+      $$('[data-view="stats"]').forEach(button => button.addEventListener('click', renderStatistics));
+      renderStatistics();
+
+      historicalResults.forEach((result, index) => {
+        const card = historyGrid.children[index];
+        if (!card) return;
+        const button = document.createElement('button');
+        button.className = 'details-btn';
+        button.textContent = 'Ergebnisse ansehen →';
+        button.style.cssText = 'margin-top:16px;width:100%;padding:10px 12px;border-radius:9px;font-weight:700';
+        button.addEventListener('click', () => {
+          const countedRatings = result.people.filter(person => person.id !== result.creator).length;
+          document.querySelector('#historyResultTitle').textContent = result.name;
+          document.querySelector('#historyResultBody').innerHTML = `
+            <div class="rating-summary">
+              <div><b>${formatScore(result.score)} ★</b>Restaurant-Durchschnitt</div>
+              <div><b>${result.people.length}</b>Bewertungen abgegeben</div>
+            </div>
+            <p class="small">Im Restaurant-Durchschnitt zählen ${countedRatings} Bewertungen. Die Erstellerbewertung bleibt sichtbar, wird aber nicht eingerechnet.</p>
+            <div class="history-result-list">${result.people.map(person => {
+              const member = members[person.id];
+              const isCreator = person.id === result.creator;
+              return `<article class="history-result-person">
+                <div class="history-result-person-head">
+                  <span class="avatar" style="background:${member.color}">${member.initials}</span>
+                  <div class="history-result-person-title"><b>${member.name}</b>${isCreator ? '<span class="creator-badge">Ersteller · nicht im Durchschnitt</span>' : '<span class="small">Teilnehmerbewertung</span>'}</div>
+                </div>
+                <div class="history-result-categories">${person.scores.map((score, categoryIndex) => `
+                  <div class="history-result-category">
+                    <small>${categories[categoryIndex]}</small>
+                    <span class="history-result-stars" role="img" aria-label="${formatScore(score)} von 5 Sternen">${renderStars(score)}</span>
+                    <span class="history-result-score">${formatScore(score)}</span>
+                  </div>`).join('')}
+                </div>
+                ${person.comment ? `<p class="history-result-comment">„${person.comment}“</p>` : ''}
+              </article>`;
+            }).join('')}</div>`;
+          modal.classList.add('open');
+        });
+        card.appendChild(button);
+      });
+    })();
+  </script>
+</body>
+</html>
