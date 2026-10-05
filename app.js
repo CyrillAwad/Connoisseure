@@ -63,7 +63,7 @@
   function databaseErrorMessage(action, error) {
     const message = String(error?.message || 'Unbekannter Datenbankfehler.');
     if (error?.code === '23505' || /duplicate key|unique constraint/i.test(message)) {
-      return 'Dieser Name wird bereits verwendet (Groß-/Kleinschreibung wird ignoriert). Wähle den vorhandenen aktiven Namen oder trage einen anderen ein.';
+      return 'Dieser Vorname wird bereits verwendet (Groß-/Kleinschreibung wird ignoriert). Wähle den vorhandenen aktiven Vornamen oder trage einen anderen ein.';
     }
     if (error?.code === '42501' || /row-level security|permission denied|not allowed|policy/i.test(message)) {
       return `${action} wurde durch Supabase-RLS abgelehnt. Prüfe die Gruppenmitgliedschaft und Richtlinien. (${message})`;
@@ -107,7 +107,7 @@
   function updateProfile() {
     const profile = $('.profile');
     if (!profile || !currentMember) return;
-    profile.innerHTML = `${memberAvatar(currentMember)}<div><strong>${escapeHtml(currentMember.display_name)}</strong><div class="small">Team Connoisseure</div></div><div class="account-actions"><button type="button" data-account-action="change">Name wechseln</button><button type="button" data-account-action="logout">Abmelden</button></div>`;
+    profile.innerHTML = `${memberAvatar(currentMember)}<div><strong>${escapeHtml(currentMember.display_name)}</strong><div class="small">Team Connoisseure</div></div><div class="account-actions"><button type="button" data-account-action="change">Vorname wechseln</button><button type="button" data-account-action="logout">Abmelden</button></div>`;
   }
 
   function populateMemberSelect() {
@@ -762,11 +762,11 @@
   async function createMember() {
     const name = $('#newMemberName').value.trim();
     if (!name) {
-      setMessage($('#memberMessage'), 'Bitte gib einen Namen ein.');
+      setMessage($('#memberMessage'), 'Bitte gib deinen Vornamen ein.');
       return;
     }
     if (members.some(member => member.display_name.trim().toLocaleLowerCase('de-DE') === name.toLocaleLowerCase('de-DE'))) {
-      setMessage($('#memberMessage'), 'Dieser Name wird bereits verwendet (Groß-/Kleinschreibung wird ignoriert). Wähle ihn oben aus oder trage einen anderen ein.');
+      setMessage($('#memberMessage'), 'Dieser Vorname wird bereits verwendet (Groß-/Kleinschreibung wird ignoriert). Wähle ihn oben aus oder trage einen anderen ein.');
       return;
     }
     $('#createMember').disabled = true;
@@ -781,7 +781,7 @@
       $('#newMemberName').value = '';
       await enterApplication(data);
     } catch (error) {
-      setMessage($('#memberMessage'), databaseErrorMessage('Name konnte nicht eingetragen werden', error));
+      setMessage($('#memberMessage'), databaseErrorMessage('Vorname konnte nicht eingetragen werden', error));
     } finally {
       $('#createMember').disabled = false;
     }
@@ -840,7 +840,7 @@
     $('#chooseMember').addEventListener('click', () => {
       const member = members.find(candidate => candidate.id === $('#memberSelect').value && candidate.is_active);
       if (!member) {
-        setMessage($('#memberMessage'), 'Wähle bitte einen aktiven Namen aus.');
+        setMessage($('#memberMessage'), 'Wähle bitte einen aktiven Vornamen aus.');
         return;
       }
       void enterApplication(member);
