@@ -5,6 +5,13 @@
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_mHQon-OPIGD1PaF9NP-nTw_4dL7C5CR';
   const GROUP_EMAIL = 'connoisseur.pro@gmx.de';
   const MEMBER_STORAGE_KEY = 'connoisseure.member-id';
+  const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+  const NOMINATIM_REQUEST_INTERVAL = 1000;
+  const NOMINATIM_CACHE_TTL = 24 * 60 * 60 * 1000;
+  const NOMINATIM_CACHE_LIMIT = 20;
+  const NOMINATIM_CACHE_STORAGE_KEY = 'connoisseure.nominatim-search-cache';
+  const NOMINATIM_RATE_LIMIT_KEY = 'connoisseure.nominatim-next-request-at';
+  const NOMINATIM_COOLDOWN_KEY = 'connoisseure.nominatim-cooldown-until';
   const CATEGORY_DEFS = [
     {key: 'food', label: 'Essen'},
     {key: 'service', label: 'Service'},
@@ -35,9 +42,11 @@
   let selectedMealId = null;
   let ratingValues = {};
   let toastTimer;
-  let placesLibraryPromise = null;
-  let placeAutocomplete = null;
-  let restaurantSearchInitializing = false;
+  let nominatimRequestQueue = Promise.resolve();
+  let nominatimNextRequestAt = 0;
+  let nominatimCooldownUntil = 0;
+  let nominatimCacheLoaded = false;
+  const nominatimSearchCache = new Map();
 
   function setMessage(element, message) {
     element.textContent = message || '';
@@ -514,7 +523,7 @@
         : '<p class="small">Restaurant-Durchschnitte erscheinen nach Abschluss und schließen Erstellerbewertungen aus.</p>';
     const mapUrl = validMapsUrl(meal.maps_url);
     const location = mapUrl
-      ? `<a class="maps-link" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener noreferrer">In Google Maps öffnen ↗</a>`
+      ? `<a class="maps-link" href="${escapeHtml(mapUrl)}" target="_blank" rel="noopener noreferrer">Kartenlink öffnen ↗</a>`
       : escapeHtml(meal.place || 'Kein Ort hinterlegt');
     const reviewContent = reviews.length
       ? `<div class="history-result-list">${reviews.map(review => renderReview(review, meal)).join('')}</div>`
@@ -657,7 +666,6 @@
   function openCreateModal() {
     $('#creatorName').value = currentMember?.display_name || '';
     openModal('createModal');
-    void initializeRestaurantSearch();
   }
 
   async function startMeal() {
@@ -749,7 +757,7 @@
       $('#mealPlace').value = '';
       $('#mapsUrl').value = '';
       $('#note').value = '';
-      resetRestaurantSearch();
+      resetOsmSearch();
       await refreshAndRender();
       toast('Fressung angelegt und für die Gruppe bereitgestellt.');
     } catch (error) {
@@ -867,6 +875,13 @@
     $('#confirmStart').addEventListener('click', () => void startMeal());
     $('#saveRating').addEventListener('click', () => void submitRating());
     $('#saveCreate').addEventListener('click', () => void createMeal());
+    $('#restaurantSearchButton').addEventListener('click', () => void searchRestaurants());
+    $('#restaurantSearchQuery').addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        void searchRestaurants();
+      }
+    });
     $('#openCreate').addEventListener('click', openCreateModal);
     $('#openCreateHistory').addEventListener('click', openCreateModal);
     $$('[data-close]').forEach(button => button.addEventListener('click', () => closeModal(button.dataset.close)));
@@ -881,112 +896,238 @@
 
   function configureCreateForm() {
     $('#createModal .form-grid').innerHTML = `
-      <div class="field restaurant-search"><label>Restaurant auf Google Maps suchen</label><div id="restaurantSearch"></div><div id="restaurantSearchStatus" class="small places-status" role="status" aria-live="polite"></div></div>
+      <div class="field full restaurant-search">
+        <label for="restaurantSearchQuery">Restaurant oder Adresse auf OpenStreetMap suchen</label>
+        <div class="osm-search-form"><input id="restaurantSearchQuery" type="search" maxlength="160" autocomplete="off" placeholder="z. B. Ramen Jun, Berlin"><button class="secondary" id="restaurantSearchButton" type="button">Suchen</button></div>
+        <div id="restaurantSearchStatus" class="small osm-status" role="status" aria-live="polite">Die Suche startet erst nach Klick auf Suchen.</div>
+        <div id="restaurantSearchResults" class="osm-results" aria-label="Suchergebnisse"></div>
+        <p class="osm-attribution small">Suchergebnisse: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap-Mitwirkende</a> · <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">Nominatim</a></p>
+      </div>
       <div class="field"><label for="restaurant">Restaurant</label><input id="restaurant" maxlength="160" placeholder="z. B. Ramen Jun"></div>
       <div class="field"><label for="creatorName">Ersteller</label><input id="creatorName" value="" disabled></div>
       <div class="field"><label for="mealPlace">Ort</label><input id="mealPlace" maxlength="200" placeholder="z. B. Berlin-Kreuzberg" required></div>
-      <div class="field"><label for="mapsUrl">Google-Maps-Link (optional)</label><input id="mapsUrl" type="url" placeholder="https://maps.google.com/..."></div>
+      <div class="field"><label for="mapsUrl">OpenStreetMap-Link (optional)</label><input id="mapsUrl" type="url" placeholder="https://www.openstreetmap.org/..."></div>
       <div class="field full"><label for="note">Notiz für die Gruppe (optional)</label><textarea id="note" maxlength="2000" placeholder="Warum müssen wir genau dort hin?"></textarea></div>`;
     $('#ratingModal .modal-head .small').textContent = 'Klicke links auf einen Stern für einen halben, rechts für einen ganzen Stern.';
   }
 
-  function loadPlacesLibrary() {
-    const apiKey = document.querySelector('meta[name="google-maps-api-key"]')?.content.trim();
-    if (!apiKey) {
-      return Promise.reject(new Error('Die Google-Maps-Suche ist noch nicht konfiguriert. Restaurant, Ort und Maps-Link kannst du weiterhin manuell eintragen.'));
-    }
-    if (!placesLibraryPromise) {
-      placesLibraryPromise = new Promise((resolve, reject) => {
-        if (window.google?.maps?.importLibrary) {
-          window.google.maps.importLibrary('places').then(resolve, reject);
-          return;
-        }
-        const callbackName = '__connoisseureGoogleMapsReady';
-        let settled = false;
-        const finish = (callback, value) => {
-          if (settled) return;
-          settled = true;
-          window.clearTimeout(timeoutId);
-          delete window[callbackName];
-          callback(value);
-        };
-        const timeoutId = window.setTimeout(() => {
-          finish(reject, new Error('Google Maps hat nicht rechtzeitig geladen. Prüfe den API-Key und die Netzwerkverbindung.'));
-        }, 15000);
-        window[callbackName] = () => {
-          try {
-            if (!window.google?.maps?.importLibrary) {
-              throw new Error('Die Google-Maps-Bibliothek wurde nicht verfügbar.');
-            }
-            window.google.maps.importLibrary('places').then(
-              library => finish(resolve, library),
-              error => finish(reject, error)
-            );
-          } catch (error) {
-            finish(reject, error);
-          }
-        };
-        const previousAuthFailure = window.gm_authFailure;
-        window.gm_authFailure = () => {
-          $('#restaurantSearchStatus').textContent = 'Google Maps hat den API-Key abgelehnt. Prüfe die API- und Referrer-Beschränkungen.';
-          if (typeof previousAuthFailure === 'function') previousAuthFailure();
-        };
-        const script = document.createElement('script');
-        script.async = true;
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async&callback=${callbackName}`;
-        script.onerror = () => finish(reject, new Error('Google Maps konnte nicht geladen werden. Prüfe den API-Key und die Netzwerkverbindung.'));
-        document.head.appendChild(script);
-      }).catch(error => {
-        placesLibraryPromise = null;
-        throw error;
-      });
-    }
-    return placesLibraryPromise;
+  function normalizedSearchQuery(query) {
+    return query.trim().normalize('NFC').replace(/\s+/g, ' ').toLocaleLowerCase('de-DE');
   }
 
-  async function initializeRestaurantSearch() {
-    const container = $('#restaurantSearch');
-    const status = $('#restaurantSearchStatus');
-    if (!container || placeAutocomplete || restaurantSearchInitializing) return;
-    restaurantSearchInitializing = true;
-    status.textContent = 'Restaurant-Suche wird geladen …';
+  function loadNominatimCache() {
+    if (nominatimCacheLoaded) return;
+    nominatimCacheLoaded = true;
     try {
-      const {PlaceAutocompleteElement} = await loadPlacesLibrary();
-      placeAutocomplete = new PlaceAutocompleteElement();
-      placeAutocomplete.setAttribute('placeholder', 'Restaurant oder Adresse eingeben');
-      placeAutocomplete.setAttribute('aria-label', 'Restaurant oder Adresse suchen');
-      placeAutocomplete.includedPrimaryTypes = ['restaurant', 'cafe', 'bar'];
-      placeAutocomplete.addEventListener('gmp-select', async event => {
-        try {
-          status.textContent = 'Restaurant wird übernommen …';
-          const place = event.placePrediction.toPlace();
-          await place.fetchFields({fields: ['displayName', 'formattedAddress', 'googleMapsURI', 'id']});
-          if (!place.displayName) {
-            throw new Error('Google Maps hat keinen Restaurantnamen zurückgegeben.');
-          }
-          $('#restaurant').value = place.displayName;
-          $('#mealPlace').value = place.formattedAddress || '';
-          $('#mapsUrl').value = place.googleMapsURI || (place.id
-            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.displayName)}&query_place_id=${encodeURIComponent(place.id)}`
-            : '');
-          status.textContent = `Ausgewählt: ${place.displayName}`;
-        } catch (error) {
-          status.textContent = `Auswahl konnte nicht übernommen werden: ${error.message || 'Unbekannter Fehler.'}`;
+      const savedEntries = JSON.parse(localStorage.getItem(NOMINATIM_CACHE_STORAGE_KEY) || '[]');
+      if (!Array.isArray(savedEntries)) return;
+      savedEntries.forEach(([key, entry]) => {
+        if (typeof key === 'string' && Array.isArray(entry?.results)
+          && Number.isFinite(entry.expiresAt) && entry.expiresAt > Date.now()) {
+          nominatimSearchCache.set(key, entry);
         }
       });
-      container.replaceChildren(placeAutocomplete);
-      status.textContent = 'Suche nach Restaurant, Café oder Bar. Du kannst die Angaben danach bearbeiten.';
-    } catch (error) {
-      status.textContent = error.message || 'Google Maps konnte nicht geladen werden. Du kannst die Angaben manuell eintragen.';
-    } finally {
-      restaurantSearchInitializing = false;
+      while (nominatimSearchCache.size > NOMINATIM_CACHE_LIMIT) {
+        nominatimSearchCache.delete(nominatimSearchCache.keys().next().value);
+      }
+    } catch {
+      nominatimSearchCache.clear();
     }
   }
 
-  function resetRestaurantSearch() {
-    const container = $('#restaurantSearch');
-    if (container) container.replaceChildren();
-    placeAutocomplete = null;
+  function persistNominatimCache() {
+    try {
+      localStorage.setItem(NOMINATIM_CACHE_STORAGE_KEY, JSON.stringify([...nominatimSearchCache]));
+    } catch {
+      return;
+    }
+  }
+
+  function getCachedNominatimResults(query) {
+    loadNominatimCache();
+    const key = normalizedSearchQuery(query);
+    const entry = nominatimSearchCache.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt <= Date.now()) {
+      nominatimSearchCache.delete(key);
+      return null;
+    }
+    nominatimSearchCache.delete(key);
+    nominatimSearchCache.set(key, entry);
+    return entry.results;
+  }
+
+  function cacheNominatimResults(query, results) {
+    loadNominatimCache();
+    const key = normalizedSearchQuery(query);
+    nominatimSearchCache.delete(key);
+    nominatimSearchCache.set(key, {results, expiresAt: Date.now() + NOMINATIM_CACHE_TTL});
+    while (nominatimSearchCache.size > NOMINATIM_CACHE_LIMIT) {
+      nominatimSearchCache.delete(nominatimSearchCache.keys().next().value);
+    }
+    persistNominatimCache();
+  }
+
+  function storedNominatimNextRequestAt() {
+    try {
+      return Number(localStorage.getItem(NOMINATIM_RATE_LIMIT_KEY)) || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function storeNominatimNextRequestAt(timestamp) {
+    try {
+      localStorage.setItem(NOMINATIM_RATE_LIMIT_KEY, String(timestamp));
+    } catch {
+      return;
+    }
+  }
+
+  function nominatimCooldownEnd() {
+    try {
+      return Math.max(nominatimCooldownUntil, Number(localStorage.getItem(NOMINATIM_COOLDOWN_KEY)) || 0);
+    } catch {
+      return nominatimCooldownUntil;
+    }
+  }
+
+  function storeNominatimCooldownEnd(timestamp) {
+    nominatimCooldownUntil = timestamp;
+    try {
+      localStorage.setItem(NOMINATIM_COOLDOWN_KEY, String(timestamp));
+    } catch {
+      return;
+    }
+  }
+
+  async function requestNominatim(url) {
+    const sendRequest = async () => {
+      const nextAllowedAt = Math.max(nominatimNextRequestAt, storedNominatimNextRequestAt());
+      const delay = nextAllowedAt - Date.now();
+      if (delay > 0) await new Promise(resolve => window.setTimeout(resolve, delay));
+      nominatimNextRequestAt = Date.now() + NOMINATIM_REQUEST_INTERVAL;
+      storeNominatimNextRequestAt(nominatimNextRequestAt);
+      return fetch(url, {
+        headers: {Accept: 'application/json'},
+        referrerPolicy: 'unsafe-url'
+      });
+    };
+    if (window.navigator?.locks?.request) {
+      return window.navigator.locks.request('connoisseure-nominatim-search', sendRequest);
+    }
+    const request = nominatimRequestQueue.then(sendRequest, sendRequest);
+    nominatimRequestQueue = request.then(() => undefined, () => undefined);
+    return request;
+  }
+
+  function osmPlaceName(result) {
+    const name = typeof result.name === 'string' ? result.name.trim() : '';
+    return name || String(result.display_name || '').split(',')[0].trim();
+  }
+
+  function selectOsmPlace(result, selectedButton) {
+    const address = String(result.display_name || '').trim();
+    const name = osmPlaceName(result);
+    if (!address || !name) return;
+    const latitude = Number(result.lat);
+    const longitude = Number(result.lon);
+    const hasCoordinates = Number.isFinite(latitude) && latitude >= -90 && latitude <= 90
+      && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180;
+    const mapsUrl = hasCoordinates
+      ? `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=18/${latitude}/${longitude}`
+      : `https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`;
+    $('#restaurant').value = name;
+    $('#mealPlace').value = address;
+    $('#mapsUrl').value = mapsUrl;
+    $$('#restaurantSearchResults .osm-result').forEach(button => {
+      const selected = button === selectedButton;
+      button.classList.toggle('selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+    $('#restaurantSearchStatus').textContent = `Ausgewählt: ${name}`;
+  }
+
+  function renderNominatimResults(results) {
+    const resultList = $('#restaurantSearchResults');
+    const status = $('#restaurantSearchStatus');
+    resultList.replaceChildren();
+    const validResults = results.filter(result =>
+      result && typeof result.display_name === 'string' && result.display_name.trim()
+    );
+    if (!validResults.length) {
+      status.textContent = 'Keine passenden Orte gefunden. Prüfe die Schreibweise oder trage die Angaben manuell ein.';
+      return;
+    }
+    validResults.forEach(result => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'osm-result';
+      button.setAttribute('aria-pressed', 'false');
+      const name = osmPlaceName(result);
+      const title = document.createElement('strong');
+      title.textContent = name || 'Unbenannter Ort';
+      const address = document.createElement('span');
+      address.textContent = result.display_name;
+      button.append(title, address);
+      button.addEventListener('click', () => selectOsmPlace(result, button));
+      resultList.appendChild(button);
+    });
+    status.textContent = `${validResults.length} Treffer gefunden. Wähle einen Eintrag aus.`;
+  }
+
+  async function searchRestaurants() {
+    const query = $('#restaurantSearchQuery').value.trim();
+    const status = $('#restaurantSearchStatus');
+    const resultsList = $('#restaurantSearchResults');
+    const button = $('#restaurantSearchButton');
+    if (button.disabled) return;
+    if (query.length < 3) {
+      resultsList.replaceChildren();
+      status.textContent = 'Bitte gib mindestens drei Zeichen ein.';
+      return;
+    }
+    if (Date.now() < nominatimCooldownEnd()) {
+      status.textContent = 'Die OpenStreetMap-Suche ist kurzzeitig begrenzt. Bitte warte eine Minute und versuche es dann erneut.';
+      return;
+    }
+    button.disabled = true;
+    resultsList.replaceChildren();
+    status.textContent = 'Suche bei OpenStreetMap …';
+    try {
+      let results = getCachedNominatimResults(query);
+      if (!results) {
+        const searchUrl = new URL(NOMINATIM_URL);
+        searchUrl.searchParams.set('q', query);
+        searchUrl.searchParams.set('format', 'jsonv2');
+        searchUrl.searchParams.set('addressdetails', '1');
+        searchUrl.searchParams.set('limit', '5');
+        searchUrl.searchParams.set('accept-language', 'de');
+        const response = await requestNominatim(searchUrl);
+        if (response.status === 429 || response.status === 503) {
+          storeNominatimCooldownEnd(Date.now() + 60_000);
+          throw new Error('Die öffentliche Suche ist ausgelastet oder hat ihr Nutzungslimit erreicht. Bitte warte mindestens eine Minute, bevor du erneut suchst.');
+        }
+        if (!response.ok) {
+          throw new Error(`OpenStreetMap antwortete mit HTTP ${response.status}.`);
+        }
+        results = await response.json();
+        if (!Array.isArray(results)) {
+          throw new Error('OpenStreetMap lieferte ein unerwartetes Suchergebnis.');
+        }
+        cacheNominatimResults(query, results);
+      }
+      renderNominatimResults(results);
+    } catch (error) {
+      status.textContent = `Suche fehlgeschlagen: ${error.message || 'OpenStreetMap ist momentan nicht erreichbar.'} Du kannst die Angaben manuell eintragen.`;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function resetOsmSearch() {
+    $('#restaurantSearchQuery').value = '';
+    $('#restaurantSearchResults').replaceChildren();
     $('#restaurantSearchStatus').textContent = '';
   }
 
