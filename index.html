@@ -16,13 +16,14 @@
     @media(min-width:801px){.bottom-nav{display:none}}
     body:not(.is-authenticated) .app,body:not(.is-authenticated) .bottom-nav{display:none!important}[hidden]{display:none!important}.auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--paper)}.auth-card{width:min(440px,100%);padding:28px;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}.auth-card h1{font:700 32px Georgia,serif;margin:8px 0}.auth-card .field{margin-top:20px}.auth-message{margin:14px 0 0;padding:11px;border-radius:10px;background:#fff0eb;color:#883c2b;font-size:13px}.auth-card .primary{width:100%;margin-top:18px}.member-create{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}.member-create .field{margin-top:10px}.auth-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.account-actions{display:flex;gap:12px;flex-basis:100%;margin-left:45px}.account-actions button{background:transparent;color:#dce5d5;text-decoration:underline;font-size:12px;padding:0}.sidebar .profile{display:flex;flex-wrap:wrap}.rating-stars button{min-width:30px;height:34px}.rating-stars .zero-rating{font-size:12px;color:var(--muted);min-width:24px}.rating-stars .zero-rating.on{color:var(--coral);font-weight:700}.empty-state{padding:16px;border-radius:12px;background:#f6f3ec;color:var(--muted);font-size:13px}.maps-link{color:var(--sage-dark);font-weight:700}.activity-list{display:grid;gap:0}.activity-list .notification{align-items:center}
     .osm-search-form{display:flex;gap:8px}.osm-search-form input{flex:1;min-width:0}.osm-status{min-height:18px}.osm-results{display:grid;gap:8px}.osm-result{display:grid;gap:3px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink)}.osm-result:hover,.osm-result.selected{border-color:var(--sage);background:#f2f7ef}.osm-result span{font-size:12px;color:var(--muted)}.osm-attribution{margin:2px 0 0}.osm-attribution a{color:var(--sage-dark)}.osm-footer{margin-top:24px;padding-top:12px;border-top:1px solid var(--line)}
+    .auth-brand-tagline{text-transform:none}
   </style>
 </head>
 <body>
   <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
     <div class="auth-card">
-      <div class="brand">connoisseure<span>°</span></div>
-      <div class="eyebrow">Gemeinsam gut essen</div>
+      <div class="brand">Connoisseure</div>
+      <div class="eyebrow auth-brand-tagline">boch boch boch boch</div>
       <h1 id="authTitle">Anmelden</h1>
       <p class="intro">Melde dich mit dem gemeinsamen Gruppen-PIN an.</p>
       <form id="loginForm">
@@ -49,10 +50,10 @@
       <button class="ghost" id="memberLogout" type="button" style="margin-top:12px">Abmelden</button>
     </div>
   </section>
-  <div class="app"><aside class="sidebar"><div class="brand">connoisseure<span>°</span></div><div class="tagline">Gemeinsam gut essen.</div><nav class="nav"><button class="active" data-view="dashboard"><b>⌂</b>Dashboard</button><button data-view="history"><b>◷</b>Historie</button><button data-view="stats"><b>⌁</b>Statistik</button></nav><div class="profile"></div></aside>
+  <div class="app"><aside class="sidebar"><div class="brand">Connoisseure</div><div class="tagline">boch boch boch boch</div><nav class="nav"><button class="active" data-view="dashboard"><b>⌂</b>Dashboard</button><button data-view="history"><b>◷</b>Historie</button><button data-view="stats"><b>⌁</b>Statistik</button></nav><div class="profile"></div></aside>
     <main class="main">
       <section id="dashboard" class="view active">
-        <div class="topbar"><div><div class="eyebrow">Deine Gruppe</div><h1 class="headline">Schön, dich zu sehen.</h1><p class="intro">Entdeckt neue Orte, bewertet ehrlich und sammelt gemeinsam Erinnerungen.</p></div><button class="primary" id="openCreate">＋ Neue Fressung</button></div>
+        <div class="topbar"><div><div class="eyebrow">Deine Gruppe</div><h1 class="headline">Schön, dich zu sehen.</h1><p class="intro">Lasset die Fressung beginnen</p></div><button class="primary" id="openCreate">＋ Neue Fressung</button></div>
         <div class="summary">
           <div class="stat"><strong id="pendingCount">0</strong><span>ausstehende Fressungen</span></div>
           <div class="stat"><strong id="dashboardGroupAverage">—</strong><span>Ø-Restaurant-Score der Gruppe</span></div>

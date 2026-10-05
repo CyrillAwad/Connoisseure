@@ -12,6 +12,7 @@
   const NOMINATIM_CACHE_STORAGE_KEY = 'connoisseure.nominatim-search-cache';
   const NOMINATIM_RATE_LIMIT_KEY = 'connoisseure.nominatim-next-request-at';
   const NOMINATIM_COOLDOWN_KEY = 'connoisseure.nominatim-cooldown-until';
+  const VIEW_IDS = new Set(['dashboard', 'history', 'stats', 'details']);
   const CATEGORY_DEFS = [
     {key: 'food', label: 'Essen'},
     {key: 'service', label: 'Service'},
@@ -46,6 +47,7 @@
   let nominatimNextRequestAt = 0;
   let nominatimCooldownUntil = 0;
   let nominatimCacheLoaded = false;
+  let currentViewId = 'dashboard';
   const nominatimSearchCache = new Map();
 
   function setMessage(element, message) {
@@ -189,7 +191,7 @@
       currentMember = member;
       storeMemberId(member.id);
       showApplication();
-      setView('dashboard');
+      setView('dashboard', {historyMode: 'replace'});
       render();
     } catch (error) {
       showMemberGate(error.message);
@@ -234,10 +236,31 @@
     }
   }
 
-  function setView(viewId) {
+  function setView(viewId, {historyMode = 'push'} = {}) {
+    if (!VIEW_IDS.has(viewId)) return;
+    if (historyMode === 'push' && viewId !== currentViewId) {
+      window.history.pushState({viewId}, '', `#${viewId}`);
+    } else if (historyMode === 'replace') {
+      window.history.replaceState({viewId}, '', `#${viewId}`);
+    }
+    currentViewId = viewId;
     $$('.view').forEach(view => view.classList.toggle('active', view.id === viewId));
     $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === viewId));
     window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  function initializeNavigation() {
+    const requestedView = window.location.hash.slice(1);
+    const initialView = VIEW_IDS.has(requestedView) ? requestedView : 'dashboard';
+    currentViewId = initialView;
+    window.history.replaceState({viewId: initialView}, '', `${window.location.pathname}${window.location.search}#${initialView}`);
+    window.addEventListener('popstate', event => {
+      const stateView = event.state?.viewId;
+      const hashView = window.location.hash.slice(1);
+      const viewId = VIEW_IDS.has(stateView) ? stateView : (VIEW_IDS.has(hashView) ? hashView : 'dashboard');
+      setView(viewId, {historyMode: 'none'});
+    });
+    setView(initialView, {historyMode: 'none'});
   }
 
   function openModal(id) {
@@ -648,7 +671,9 @@
     $$('[data-view], [data-view-link]').forEach(button => {
       if (button.dataset.navBound) return;
       button.dataset.navBound = 'true';
-      button.addEventListener('click', () => setView(button.dataset.view || button.dataset.viewLink));
+      button.addEventListener('click', () => setView(button.dataset.view || button.dataset.viewLink, {
+        historyMode: button.dataset.viewLink ? 'replace' : 'push'
+      }));
     });
   }
 
@@ -1133,6 +1158,7 @@
 
   async function initialize() {
     configureCreateForm();
+    initializeNavigation();
     bindUi();
     try {
       if (!window.supabase?.createClient) {
