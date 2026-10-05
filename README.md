@@ -8,6 +8,8 @@ Unter 1024 px gibt es eine einzige feste Navigation für **Dashboard**, **Histor
 
 Die vier Bewertungskategorien erlauben weiterhin 0 bis 5 Sterne in 0,5er-Schritten: links auf einen Stern tippen für den halben Wert, rechts für den ganzen Wert; **0** setzt null Sterne. Mit Tab wird jede Kategorie erreicht, Pfeiltasten ändern den Wert um 0,5, **Pos1** setzt 0 und **Ende** setzt 5. Enter/Leertaste auf einem Stern wählt den ganzen Wert. Aktueller Wert und Halbsterne bleiben sichtbar. Dialoge unterstützen Escape, halten den Tastaturfokus und geben ihn beim Schließen zurück. Fehlermeldungen bleiben bis zur nächsten Aktion beziehungsweise bis zum Schließen sichtbar.
 
+Goldene Fokusrahmen werden nicht verwendet. Bei Tastaturbedienung markieren dezente Unterstreichungen beziehungsweise Hintergrundtöne den aktiven Control; automatischer Fokus, Mausklicks und Touch erzeugen keine zusätzlichen Markierungsrahmen. Formularränder und die Auswahl der Teilnehmenden bleiben erhalten.
+
 ## Lokale Oberflächenprüfung
 
 Die Website selbst benötigt keine npm-Abhängigkeiten. Die optionalen Browserchecks in `tests/` nutzen nur Playwright als Entwicklungswerkzeug:
@@ -26,6 +28,8 @@ npx playwright install webkit
 $env:BROWSER_ENGINE = 'webkit'
 npm run check
 ```
+
+Für Firefox analog `npx playwright install firefox` ausführen und `BROWSER_ENGINE` auf `firefox` setzen. Firefox wird bei mobilen Breiten mit schmalem Viewport und Touch-Unterstützung geprüft, nicht mit einer emulierten mobilen Browser-Engine. `FOCUS_ONLY=1` beschränkt den Lauf auf die Fokusrahmen-Regressionsfälle bei 390 und 1440 px.
 
 Der Check startet und beendet seinen eigenen lokalen HTTP-Server unter einem simulierten `/Connoisseure/`-Unterpfad. Sämtliche externen Anfragen werden abgefangen: Supabase wird durch synthetische Mitglieder/Fressungen und RPC-Fixtures ersetzt, OSM durch lokale Antworten. Es werden keine echten Logins, Datenänderungen oder öffentlichen Suchanfragen ausgeführt. Geprüft werden Ansichten und Dialoge bei 320, 375, 390, 768, 1024 und 1440 px, Overflow, Button-Zentrierung/44-px-Touchziele, Fokus/Navigation, Halbsternwerte, Fressungsablauf, Rechte, Durchschnittswerte/Ranking, Mitglieder-Lade-Race sowie OSM-Autofill/Cache/Cooldown. Screenshots und `report.json` landen im temporären Ordner `connoisseure-ui-checks`; `SCREENSHOT_DIR` kann einen anderen Ausgabeordner festlegen.
 

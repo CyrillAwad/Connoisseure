@@ -25,7 +25,7 @@ button, summary { -webkit-tap-highlight-color: transparent; }
 button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; border: 1px solid transparent; border-radius: 7px; padding: 10px 14px; font-weight: 650; line-height: 1.35; text-align: center; cursor: pointer; overflow-wrap: anywhere; }
 button:disabled { cursor: not-allowed; opacity: .6; }
 button:not(:disabled):hover { filter: brightness(.96); }
-:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+:focus { outline: none; }
 h1, h2, h3, p { overflow-wrap: anywhere; }
 h1, h2, h3 { line-height: 1.25; }
 h2 { font-size: 20px; margin: 0 0 6px; }
@@ -230,6 +230,12 @@ a { color: var(--sage-dark); text-underline-offset: 3px; overflow-wrap: anywhere
 .toast.error { background: var(--error); }
 .toast .close { color: white; background: #ffffff18; }
 #toastMessage { min-width: 0; overflow-wrap: anywhere; }
+
+.keyboard-navigation :is(button, a):focus { text-decoration: underline; text-underline-offset: 4px; }
+.keyboard-navigation :is(.close, .rating-stars button, .account-menu summary):focus { background-color: #dce8dd; }
+.keyboard-navigation .toast .close:focus { background-color: #ffffff30; }
+.keyboard-navigation .field :is(input, textarea, select):focus { background-color: #f0f5ee; }
+.keyboard-navigation .member-option:has(input:focus) > span:last-child { text-decoration: underline; text-underline-offset: 4px; }
 
 @media (min-width: 1024px) {
   .app { display: flex; }

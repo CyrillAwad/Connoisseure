@@ -914,6 +914,14 @@
   }
 
   function bindUi() {
+    document.addEventListener('keydown', event => {
+      if (['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(event.key)) {
+        document.body.classList.add('keyboard-navigation');
+      }
+    }, true);
+    ['pointerdown', 'mousedown', 'touchstart'].forEach(type => {
+      document.addEventListener(type, () => document.body.classList.remove('keyboard-navigation'), {capture: true, passive: true});
+    });
     $('#loginForm').addEventListener('submit', async event => {
       event.preventDefault();
       if (!supabase) {
