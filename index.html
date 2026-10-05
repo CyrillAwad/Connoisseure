@@ -14,28 +14,53 @@
     @media(max-width:800px){.member-stats{grid-template-columns:1fr}}
     @media(max-width:420px){.history-result-person{padding:11px}.history-result-category{padding:8px}.history-result-stars{font-size:14px}.stats-category{grid-template-columns:minmax(90px,.8fr) minmax(60px,1fr) 38px;gap:8px}.member-stat-card{padding:12px}.member-stat-metrics{gap:5px}.member-stat-metric{padding:8px 5px}.member-stat-metric b{font-size:16px}}
     @media(min-width:801px){.bottom-nav{display:none}}
+    body:not(.is-authenticated) .app,body:not(.is-authenticated) .bottom-nav{display:none!important}[hidden]{display:none!important}.auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--paper)}.auth-card{width:min(440px,100%);padding:28px;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}.auth-card h1{font:700 32px Georgia,serif;margin:8px 0}.auth-card .field{margin-top:20px}.auth-message{margin:14px 0 0;padding:11px;border-radius:10px;background:#fff0eb;color:#883c2b;font-size:13px}.auth-card .primary{width:100%;margin-top:18px}.member-create{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}.member-create .field{margin-top:10px}.auth-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.account-actions{display:flex;gap:12px;flex-basis:100%;margin-left:45px}.account-actions button{background:transparent;color:#dce5d5;text-decoration:underline;font-size:12px;padding:0}.sidebar .profile{display:flex;flex-wrap:wrap}.rating-stars button{min-width:30px;height:34px}.rating-stars .zero-rating{font-size:12px;color:var(--muted);min-width:24px}.rating-stars .zero-rating.on{color:var(--coral);font-weight:700}.empty-state{padding:16px;border-radius:12px;background:#f6f3ec;color:var(--muted);font-size:13px}.maps-link{color:var(--sage-dark);font-weight:700}.activity-list{display:grid;gap:0}.activity-list .notification{align-items:center}
   </style>
 </head>
 <body>
-  <div class="app"><aside class="sidebar"><div class="brand">connoisseure<span>°</span></div><div class="tagline">Gemeinsam gut essen.</div><nav class="nav"><button class="active" data-view="dashboard"><b>⌂</b>Dashboard</button><button data-view="history"><b>◷</b>Historie</button><button data-view="stats"><b>⌁</b>Statistik</button></nav><div class="profile"><div class="avatar">LK</div><div><strong>Lea König</strong><div class="small">Team Connoisseure</div></div></div></aside>
+  <section class="auth-screen" id="authScreen" aria-labelledby="authTitle">
+    <div class="auth-card">
+      <div class="brand">connoisseure<span>°</span></div>
+      <div class="eyebrow">Gemeinsam gut essen</div>
+      <h1 id="authTitle">Anmelden</h1>
+      <p class="intro">Melde dich mit dem gemeinsamen Gruppen-PIN an.</p>
+      <form id="loginForm">
+        <div class="field"><label for="groupPin">Gruppen-PIN</label><input id="groupPin" type="password" autocomplete="current-password" required></div>
+        <p class="auth-message" id="authMessage" role="alert" hidden></p>
+        <button class="primary" id="loginButton" type="submit">Anmelden</button>
+      </form>
+      <button class="secondary" id="failedLogout" type="button" hidden>Abmelden</button>
+    </div>
+  </section>
+  <section class="auth-screen" id="memberScreen" aria-labelledby="memberTitle" hidden>
+    <div class="auth-card">
+      <div class="eyebrow">Dein Profil auf diesem Gerät</div>
+      <h1 id="memberTitle">Wer bist du?</h1>
+      <p class="intro">Wähle deinen Namen oder trage dich einmalig in die Gruppe ein.</p>
+      <div class="field" id="memberChoiceWrap"><label for="memberSelect">Vorhandener Name</label><select id="memberSelect"></select></div>
+      <p class="auth-message" id="memberMessage" role="alert" hidden></p>
+      <div class="auth-actions"><button class="primary" id="chooseMember" type="button">Weiter</button><button class="secondary" id="cancelMemberChange" type="button" hidden>Abbrechen</button></div>
+      <div class="member-create">
+        <strong>Noch kein Name dabei?</strong>
+        <div class="field"><label for="newMemberName">Dein Name</label><input id="newMemberName" maxlength="80" autocomplete="name" placeholder="Vor- und Nachname"></div>
+        <button class="secondary" id="createMember" type="button" style="margin-top:10px">Namen eintragen</button>
+      </div>
+      <button class="ghost" id="memberLogout" type="button" style="margin-top:12px">Abmelden</button>
+    </div>
+  </section>
+  <div class="app"><aside class="sidebar"><div class="brand">connoisseure<span>°</span></div><div class="tagline">Gemeinsam gut essen.</div><nav class="nav"><button class="active" data-view="dashboard"><b>⌂</b>Dashboard</button><button data-view="history"><b>◷</b>Historie</button><button data-view="stats"><b>⌁</b>Statistik</button></nav><div class="profile"></div></aside>
     <main class="main">
       <section id="dashboard" class="view active">
-        <div class="topbar"><div><div class="eyebrow">Donnerstag, 05. Oktober</div><h1 class="headline">Schön, dich zu sehen, Lea.</h1><p class="intro">Entdeckt neue Orte, bewertet ehrlich und sammelt gemeinsam Erinnerungen.</p></div><button class="primary" id="openCreate">＋ Neue Fressung</button></div>
+        <div class="topbar"><div><div class="eyebrow">Deine Gruppe</div><h1 class="headline">Schön, dich zu sehen.</h1><p class="intro">Entdeckt neue Orte, bewertet ehrlich und sammelt gemeinsam Erinnerungen.</p></div><button class="primary" id="openCreate">＋ Neue Fressung</button></div>
         <div class="summary">
-          <div class="stat"><strong id="pendingCount">2</strong><span>ausstehende Fressungen</span></div>
+          <div class="stat"><strong id="pendingCount">0</strong><span>ausstehende Fressungen</span></div>
           <div class="stat"><strong id="dashboardGroupAverage">—</strong><span>Ø-Restaurant-Score der Gruppe</span></div>
           <div class="stat"><strong id="dashboardPersonalRank">—</strong><span id="dashboardPersonalAverage">dein Platz · Ø deiner Empfehlungen</span></div>
         </div>
-        <div class="pending-wrap"><div class="card-head"><div><h2>Ausstehende Fressungen</h2><span class="small">Bewertet wird erst nach dem Start.</span></div><span class="status running" id="pendingSummary">2 offen</span></div><div class="pending-list" id="pendingList"></div></div>
-        <div class="grid">
-          <div class="card"><div class="card-head"><div><h2>Letzte Fressungen</h2><span class="small">Abgeschlossene gemeinsame Erlebnisse</span></div><button class="link" data-view-link="history">Alle ansehen →</button></div><article class="meal"><div><h3>Ramen Jun</h3><p>Berlin · vorgeschlagen von Max</p><span class="pill">vor 3 Tagen</span></div><div class="score"><div class="stars">★★★★★</div><small>4,8 von 4 Bewertungen</small></div></article><article class="meal"><div><h3>Osteria Verde</h3><p>Neukölln · vorgeschlagen von dir</p><span class="pill">vor 2 Wochen</span></div><div class="score"><div class="stars">★★★★<span style="color:#d9d5cb">★</span></div><small>4,2 von 3 Bewertungen</small></div></article></div>
-          <div>
-            <div class="card"><div class="card-head"><div><h2>Leaderboard</h2><span class="small">Sortiert nach Ø-Restaurant-Score</span></div></div><div class="leaderboard-list" id="leaderboardList"></div></div>
-            <div class="card" style="margin-top:22px"><h2>Benachrichtigungen</h2><div class="notification"><div class="avatar" style="background:#f0d49c">MS</div><div><b>Max hat „Ramen Jun“ gestartet</b><span>Du kannst jetzt bewerten.</span></div></div><div class="notification"><div class="avatar" style="background:#e4beb2">AS</div><div><b>Neue Fressung von Ana</b><span>Wartet auf den Start.</span></div></div></div>
-          </div>
-        </div>
+        <div class="pending-wrap"><div class="card-head"><div><h2>Ausstehende Fressungen</h2><span class="small">Bewertet wird erst nach dem Start.</span></div><span class="status running" id="pendingSummary">0 offen</span></div><div class="pending-list" id="pendingList"></div></div>
+        <div class="grid"></div>
       </section>
-      <section id="history" class="view"><div class="topbar"><div><div class="eyebrow">Eure kulinarische Zeitreise</div><h1 class="headline">Historie</h1><p class="intro">Nur vollständig bewertete Fressungen landen hier.</p></div><button class="primary" id="openCreateHistory">＋ Neue Fressung</button></div><div class="history-grid"><div class="card"><div class="eyebrow">September 2025</div><h2>Ramen Jun</h2><p class="intro">Intensive Tonkotsu-Brühe, gemütlicher Laden und gute Gyoza.</p><div class="stars">★★★★★ <small style="color:var(--muted)">4,8</small></div><span class="pill">4 Bewertungen · Max</span></div><div class="card"><div class="eyebrow">August 2025</div><h2>Osteria Verde</h2><p class="intro">Handgemachte Pasta und eine Weinkarte, bei der man länger bleiben möchte.</p><div class="stars">★★★★<span style="color:#d9d5cb">★</span> <small style="color:var(--muted)">4,2</small></div><span class="pill">3 Bewertungen · Lea</span></div></div></section>
+      <section id="history" class="view"><div class="topbar"><div><div class="eyebrow">Eure kulinarische Zeitreise</div><h1 class="headline">Historie</h1><p class="intro">Nur vollständig bewertete Fressungen landen hier.</p></div><button class="primary" id="openCreateHistory">＋ Neue Fressung</button></div><div class="history-grid"></div></section>
       <section id="stats" class="view">
         <div class="eyebrow">Zahlen, die schmecken</div><h1 class="headline">Statistik</h1>
         <p class="intro">Die Übersicht zählt nur abgeschlossene Fressungen. Erstellerbewertungen sind sichtbar, fließen aber nicht in die Restaurantwerte ein.</p>
@@ -49,246 +74,10 @@
       </section>
       <section id="details" class="view"><button class="ghost" data-view-link="dashboard">← Zurück zum Dashboard</button><div id="detailContent"></div></section>
     </main></div><nav class="bottom-nav nav"><button class="active" data-view="dashboard"><b>⌂</b>Home</button><button data-view="history"><b>◷</b>Historie</button><button data-view="stats"><b>⌁</b>Statistik</button></nav>
-  <div class="modal-backdrop" id="createModal"><div class="modal"><div class="modal-head"><div><div class="eyebrow">Gemeinsames Erlebnis planen</div><h2>Neue Fressung</h2><p class="small">Die Bewertung beginnt erst nach dem gemeinsamen Start.</p></div><button class="close" data-close="createModal">×</button></div><div class="form-grid"><div class="field"><label>Restaurant</label><input id="restaurant" placeholder="z. B. Ramen Jun"></div><div class="field"><label>Ersteller</label><select id="creator"><option value="lea">Lea König (du)</option><option value="max">Max Schneider</option><option value="ana">Ana Silva</option></select></div><div class="field full"><label>Ort oder Google-Maps-Link</label><div class="map">Restaurant auf der Karte suchen …</div></div><div class="field full"><label>Notiz für die Gruppe</label><textarea id="note" placeholder="Warum müssen wir genau dort hin?"></textarea></div></div><div class="modal-actions"><button class="secondary" data-close="createModal">Abbrechen</button><button class="primary" id="saveCreate">Fressung anlegen</button></div></div></div>
+  <div class="modal-backdrop" id="createModal"><div class="modal"><div class="modal-head"><div><div class="eyebrow">Gemeinsames Erlebnis planen</div><h2>Neue Fressung</h2><p class="small">Die Bewertung beginnt erst nach dem gemeinsamen Start.</p></div><button class="close" data-close="createModal">×</button></div><div class="form-grid"></div><div class="modal-actions"><button class="secondary" data-close="createModal">Abbrechen</button><button class="primary" id="saveCreate">Fressung anlegen</button></div></div></div>
   <div class="modal-backdrop" id="startModal"><div class="modal"><div class="modal-head"><div><div class="eyebrow">Nächster Schritt</div><h2>Fressung starten</h2><p class="small">Wähle aus, wer tatsächlich dabei war.</p></div><button class="close" data-close="startModal">×</button></div><div class="member-picker" id="memberPicker"></div><div class="confirm-box"><b>Wichtig:</b> Nach dem Start kann die Teilnehmerliste nicht mehr geändert werden. Die ausgewählten Personen erhalten danach die Bewertungsaktion.</div><div class="modal-actions"><button class="secondary" data-close="startModal">Abbrechen</button><button class="primary" id="confirmStart">Fressung starten</button></div></div></div>
   <div class="modal-backdrop" id="ratingModal"><div class="modal"><div class="modal-head"><div><div class="eyebrow">Deine Perspektive</div><h2 id="ratingTitle">Fressung bewerten</h2><p class="small">Klicke auf einen Stern, doppelklicke für einen halben Stern.</p></div><button class="close" data-close="ratingModal">×</button></div><div class="rating-list"><div class="rating-row"><span>Essen</span><span class="rating-stars" data-rating="food"></span></div><div class="rating-row"><span>Service</span><span class="rating-stars" data-rating="service"></span></div><div class="rating-row"><span>Ambiente</span><span class="rating-stars" data-rating="ambience"></span></div><div class="rating-row"><span>Preis-Leistung</span><span class="rating-stars" data-rating="value"></span></div></div><div class="field" style="margin-top:14px"><label>Dein Kommentar (optional)</label><textarea id="ratingComment" placeholder="Was ist dir im Gedächtnis geblieben?"></textarea></div><div class="confirm-box">Als Ersteller darfst du bewerten. Deine Bewertung wird angezeigt, zählt aber nicht in den Restaurant-Durchschnitt.</div><div class="modal-actions"><button class="secondary" data-close="ratingModal">Abbrechen</button><button class="primary" id="saveRating">Bewertung speichern</button></div></div></div><div class="toast" id="toast"></div>
-  <script>
-    const members={lea:{name:'Lea König',initials:'LK',color:'#e1ae60'},max:{name:'Max Schneider',initials:'MS',color:'#f0d49c'},ana:{name:'Ana Silva',initials:'AS',color:'#e4beb2'},jonas:{name:'Jonas Weber',initials:'JW',color:'#bfd1ca'}};let currentUser='lea',selectedMeal=null,ratings={};let meals=[{id:1,name:'Osteria Verde',place:'Neukölln',note:'Handgemachte Pasta und eine schöne Weinkarte.',creator:'lea',status:'waiting',participants:[],rated:[]},{id:2,name:'Khao San',place:'Kreuzberg',note:'Knuspriges Hähnchen und frische Kräuter.',creator:'ana',status:'running',participants:['ana','lea','max'],rated:['ana','max']}];const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];function esc(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>e.classList.remove('show'),3800)}function setView(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));$$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===id));window.scrollTo({top:0,behavior:'smooth'})}function open(id){$('#'+id).classList.add('open')}function close(id){$('#'+id).classList.remove('open')}function mealStatus(m){return m.status==='waiting'?'<span class="status waiting">● Wartet auf Start</span>':m.status==='running'?'<span class="status running">● Bewertung läuft</span>':'<span class="status complete">✓ Abgeschlossen</span>'}function pendingCard(m){const c=members[m.creator],isCreator=m.creator===currentUser,isSelected=m.participants.includes(currentUser),hasRated=m.rated.includes(currentUser);let action='';if(m.status==='waiting')action=isCreator?`<button class="start-btn" data-action="start" data-id="${m.id}">Fressung starten</button>`:'<button class="disabled-btn" data-action="blocked">Bewerten</button>';else if(m.status==='running')action=isSelected&&!hasRated?`<button class="rate-btn" data-action="rate" data-id="${m.id}">Bewerten</button>`:isSelected?'<span class="status complete">✓ Du hast bewertet</span>':'<span class="status">Nicht dabei</span>';else action=`<button class="details-btn" data-action="details" data-id="${m.id}">Details ansehen</button>`;const progress=m.status==='waiting'?'Noch keine Teilnehmer ausgewählt':`${m.rated.length} von ${m.participants.length} Bewertungen`;return `<article class="pending ${m.status==='running'?'started':''}"><div class="pending-top"><div><h3>${esc(m.name)}</h3><p>${esc(m.place)} · vorgeschlagen von ${esc(c.name)}</p><p>${esc(m.note)}</p></div>${mealStatus(m)}</div><div class="small" style="display:block;margin-top:11px">${progress}</div>${m.status==='running'?`<div class="progress-line"><i style="width:${Math.round(m.rated.length/m.participants.length*100)}%"></i></div>`:''}<div class="pending-actions">${action}<button class="details-btn" data-action="details" data-id="${m.id}">Details ansehen</button></div></article>`}function render(){const list=meals.filter(m=>m.status!=='complete');$('#pendingList').innerHTML=list.length?list.map(pendingCard).join(''):'<div class="card"><p style="margin:0;color:var(--muted)">Keine ausstehenden Fressungen. Zeit für einen neuen Vorschlag!</p></div>';$('#pendingCount').textContent=list.length;$('#pendingSummary').textContent=list.length+' offen';$$('[data-action]').forEach(b=>b.addEventListener('click',handleAction))}function handleAction(e){const b=e.currentTarget,a=b.dataset.action,id=Number(b.dataset.id);if(a==='blocked'){toast('Die Fressung wurde noch nicht gestartet. Bitte warte, bis der Ersteller die Teilnehmer ausgewählt hat.');return}if(a==='start'){selectedMeal=meals.find(m=>m.id===id);openStart(selectedMeal);return}if(a==='rate'){selectedMeal=meals.find(m=>m.id===id);openRating(selectedMeal);return}if(a==='details'){selectedMeal=meals.find(m=>m.id===id);renderDetails(selectedMeal);setView('details')}}function openStart(m){$('#memberPicker').innerHTML=Object.entries(members).map(([id,x])=>`<label class="member-option"><input type="checkbox" value="${id}" ${id===m.creator?'checked':''}><span class="avatar" style="background:${x.color}">${x.initials}</span><span><b>${x.name}</b><small class="small">${id===m.creator?'Ersteller':''}</small></span></label>`).join('');open('startModal')}function openRating(m){$('#ratingTitle').textContent=m.name+' bewerten';ratings={};$$('#ratingModal .rating-stars').forEach(setupStars);$('#ratingComment').value='';open('ratingModal')}function setupStars(row){let value=0;row.innerHTML='';for(let i=1;i<=5;i++){const star=document.createElement('button');star.type='button';star.textContent='★';star.setAttribute('aria-label',i+' Sterne');star.addEventListener('click',()=>{value=i;ratings[row.dataset.rating]=value;draw()});star.addEventListener('dblclick',()=>{value=i-.5;ratings[row.dataset.rating]=value;draw()});row.appendChild(star)}function draw(){row.querySelectorAll('button').forEach((s,i)=>{s.classList.toggle('on',i<Math.floor(value));s.classList.toggle('half',value%1!==0&&i===Math.floor(value))})}}function renderDetails(m){const c=members[m.creator];const membersHtml=m.status==='running'?`<h2 style="margin-top:24px">Teilnehmende</h2><div class="member-list">${m.participants.map(id=>{const x=members[id],done=m.rated.includes(id);return `<div class="member"><span class="avatar" style="background:${x.color}">${x.initials}</span><span class="member-info"><b>${x.name}</b><span class="member-state">${done?'Bewertung abgegeben':'Bewertung ausstehend'}</span></span><span class="${done?'check':'pending-state'}">${done?'✓ Fertig':'● Offen'}</span></div>`}).join('')}</div>`:'';$('#detailContent').innerHTML=`<div class="eyebrow">Fressung im Überblick</div><div class="topbar"><div><h1 class="headline">${esc(m.name)}</h1><p class="intro">${esc(m.place)} · vorgeschlagen von ${esc(c.name)}</p></div>${mealStatus(m)}</div><div class="detail-layout"><div><div class="card"><div class="map"></div><div class="detail-meta"><div class="meta-box"><b>Notiz</b>${esc(m.note)}</div><div class="meta-box"><b>Status</b>${mealStatus(m)}</div></div>${m.status==='waiting'?'<div class="confirm-box">Die Teilnehmerliste wird erst beim Start festgelegt. Der Ersteller muss die Fressung starten, bevor Bewertungen möglich sind.</div>':''}${membersHtml}</div></div><div class="card"><h2>Bewertungen</h2>${m.status==='complete'?'<div class="rating-summary"><div><b>4,8 ★</b>Essen</div><div><b>4,5 ★</b>Service</div><div><b>4,7 ★</b>Ambiente</div><div><b>4,2 ★</b>Preis-Leistung</div></div><p class="small" style="margin-top:18px">Die Erstellerbewertung ist sichtbar, aber nicht im Durchschnitt enthalten.</p>':'<p style="color:var(--muted)">Die Ergebnisse erscheinen hier, sobald alle ausgewählten Personen bewertet haben.</p>'}</div></div>`}
-    $('#confirmStart').addEventListener('click',()=>{const chosen=$$('#memberPicker input:checked').map(i=>i.value);if(!chosen.length){toast('Wähle mindestens eine teilnehmende Person aus.');return}selectedMeal.participants=chosen;selectedMeal.status='running';selectedMeal.rated=[];close('startModal');render();toast('Fressung gestartet. Die ausgewählten Personen können jetzt bewerten.');});$('#saveRating').addEventListener('click',()=>{if(['food','service','ambience','value'].some(k=>!ratings[k])){toast('Bitte bewerte alle vier Kategorien.');return}selectedMeal.rated=[...new Set([...selectedMeal.rated,currentUser])];close('ratingModal');if(selectedMeal.rated.length===selectedMeal.participants.length){selectedMeal.status='complete';toast('Bewertung gespeichert – die Fressung ist abgeschlossen!')}else toast('Bewertung gespeichert. Noch '+(selectedMeal.participants.length-selectedMeal.rated.length)+' Bewertung ausstehend.');render()});$('#saveCreate').addEventListener('click',()=>{const name=$('#restaurant').value.trim();if(!name){toast('Bitte gib ein Restaurant ein.');return}const creator=$('#creator').value;meals.unshift({id:Date.now(),name,place:'Noch kein Ort hinterlegt',note:$('#note').value.trim()||'Noch keine Notiz hinterlegt.',creator,status:'waiting',participants:[],rated:[]});close('createModal');$('#restaurant').value='';$('#note').value='';render();toast('Fressung angelegt und für alle als ausstehend gespeichert.')});$('#openCreate').addEventListener('click',()=>open('createModal'));$('#openCreateHistory').addEventListener('click',()=>open('createModal'));$$('[data-close]').forEach(b=>b.addEventListener('click',()=>close(b.dataset.close)));$$('[data-view], [data-view-link]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view||b.dataset.viewLink)));render();
-  </script>
-  <script>
-    (() => {
-      const categories = ['Essen','Service','Ambiente','Preis-Leistung'];
-      const historicalResults = [
-        {name:'Ramen Jun', score:4.8, creator:'max', people:[
-          {id:'max', scores:[5,4.5,5,4.5], comment:'Brühe mit ordentlich Wumms und sehr gute Gyoza.'},
-          {id:'lea', scores:[4.5,5,4.5,4], comment:'Super gemütlich, ich würde wieder hingehen.'},
-          {id:'ana', scores:[5,4.5,5,4.5], comment:'Tolle Aromen und schneller Service.'},
-          {id:'jonas', scores:[4.5,4.5,4.5,4], comment:'Etwas laut, aber das Essen war stark.'}
-        ]},
-        {name:'Osteria Verde', score:4.2, creator:'lea', people:[
-          {id:'lea', scores:[4.5,4,4.5,4], comment:'Handgemachte Pasta, schöne Weinkarte.'},
-          {id:'max', scores:[4,4.5,4,3.5], comment:'Lecker, aber für die Portion etwas teuer.'},
-          {id:'ana', scores:[4,4,4.5,4], comment:'Ruhiger Abend und sehr freundliches Team.'}
-        ]}
-      ];
-      const historyGrid = document.querySelector('#history .history-grid');
-      const modal = document.createElement('div');
-      modal.className = 'modal-backdrop';
-      modal.id = 'historyResultModal';
-      modal.innerHTML = '<div class="modal"><div class="modal-head"><div><div class="eyebrow">Abgeschlossenes Ergebnis</div><h2 id="historyResultTitle"></h2><p class="small">Alle ausgewählten Personen haben bewertet.</p></div><button class="close" id="closeHistoryResult" aria-label="Ergebnisse schließen">×</button></div><div id="historyResultBody"></div></div>';
-      document.body.appendChild(modal);
-      document.querySelector('#closeHistoryResult').addEventListener('click', () => modal.classList.remove('open'));
-
-      const formatScore = score => score.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1});
-      const renderStars = score => Array.from({length:5}, (_, index) => {
-        const remainder = score - index;
-        const state = remainder >= 1 ? '' : remainder >= 0.5 ? 'half' : 'empty';
-        return `<span class="${state}">★</span>`;
-      }).join('');
-
-      const scoreKeys = ['food','service','ambience','value'];
-      const demoReviews = {
-        2:[
-          {id:'ana',scores:[4.5,4.5,4,4],comment:'Frische Kräuter und angenehme Schärfe.'},
-          {id:'max',scores:[4,4.5,4,4.5],comment:'Gutes Essen und große Portionen.'}
-        ]
-      };
-      meals.forEach(meal => {
-        if (demoReviews[meal.id] && !meal.reviews) meal.reviews = demoReviews[meal.id];
-      });
-      const originalRender = render;
-      render = function() {
-        meals.sort((left, right) => Number(right.status === 'running') - Number(left.status === 'running'));
-        originalRender();
-        if (window.renderStatistics) window.renderStatistics();
-      };
-      render();
-      const rankRows = $$('#dashboard .rank');
-      let leaderboardList = document.querySelector('#leaderboardList');
-      if (!leaderboardList) {
-        const leaderboard = rankRows[0] && rankRows[0].parentElement;
-        leaderboardList = document.createElement('div');
-        leaderboardList.id = 'leaderboardList';
-        rankRows.forEach(row => row.remove());
-        if (leaderboard) leaderboard.appendChild(leaderboardList);
-      }
-
-      const renderStatistics = () => {
-        const completedMeals = [
-          ...historicalResults.map(result => ({
-            name:result.name,
-            creator:result.creator,
-            score:result.score,
-            reviews:result.people.map(person => ({id:person.id, scores:person.scores}))
-          })),
-          ...meals.filter(meal => meal.status === 'complete').map(meal => ({
-            name:meal.name,
-            creator:meal.creator,
-            score:null,
-            reviews:meal.reviews || []
-          }))
-        ];
-        const byMember = Object.fromEntries(Object.keys(members).map(id => [id, {
-          recommendations:0,
-          restaurantScoreTotal:0,
-          scoredRecommendations:0,
-          receivedRatings:0
-        }]));
-        const categoryTotals = categories.map(() => ({sum:0, count:0}));
-        const restaurantNames = new Set();
-        const restaurantScores = [];
-        let totalRatings = 0;
-
-        completedMeals.forEach(meal => {
-          const creator = byMember[meal.creator];
-          if (creator) creator.recommendations++;
-          restaurantNames.add(meal.name.trim().toLocaleLowerCase());
-          const individualScores = [];
-          meal.reviews.forEach(review => {
-            totalRatings++;
-            if (review.id === meal.creator || !byMember[meal.creator]) return;
-            const scoreValues = Array.isArray(review.scores)
-              ? review.scores
-              : scoreKeys.map(key => review.scores && review.scores[key]);
-            if (scoreValues.length !== categories.length || scoreValues.some(score => !Number.isFinite(score))) return;
-            individualScores.push(scoreValues.reduce((sum, score) => sum + score, 0) / categories.length);
-            scoreValues.forEach((score, index) => {
-              categoryTotals[index].sum += score;
-              categoryTotals[index].count++;
-            });
-            byMember[meal.creator].receivedRatings++;
-          });
-          const restaurantScore = Number.isFinite(meal.score)
-            ? meal.score
-            : individualScores.length
-              ? individualScores.reduce((sum, score) => sum + score, 0) / individualScores.length
-              : null;
-          if (restaurantScore !== null) {
-            restaurantScores.push(restaurantScore);
-            if (creator) {
-              creator.restaurantScoreTotal += restaurantScore;
-              creator.scoredRecommendations++;
-            }
-          }
-        });
-
-        document.querySelector('#statsMeals').textContent = completedMeals.length;
-        document.querySelector('#statsRatings').textContent = totalRatings;
-        document.querySelector('#statsRestaurants').textContent = restaurantNames.size;
-        const groupAverage = restaurantScores.length
-          ? restaurantScores.reduce((sum, score) => sum + score, 0) / restaurantScores.length
-          : null;
-        document.querySelector('#dashboardGroupAverage').textContent = groupAverage === null ? '—' : `${formatScore(groupAverage)} ★`;
-
-        const ranking = Object.entries(byMember).map(([id, stats]) => ({
-          id,
-          ...stats,
-          average:stats.scoredRecommendations ? stats.restaurantScoreTotal / stats.scoredRecommendations : null
-        })).sort((left, right) => {
-          if (left.average === null) return right.average === null ? members[left.id].name.localeCompare(members[right.id].name) : 1;
-          if (right.average === null) return -1;
-          return right.average - left.average || members[left.id].name.localeCompare(members[right.id].name);
-        });
-        let currentRank = 0;
-        let previousAverage = null;
-        ranking.forEach((person, index) => {
-          if (person.average !== null) {
-            const displayedAverage = Number(person.average.toFixed(1));
-            if (previousAverage === null || displayedAverage !== previousAverage) currentRank = index + 1;
-            person.rank = currentRank;
-            previousAverage = displayedAverage;
-          } else {
-            person.rank = null;
-          }
-        });
-        leaderboardList.innerHTML = ranking.map(person => {
-          const member = members[person.id];
-          const scoreLabel = person.average === null ? '—' : `${formatScore(person.average)} ★`;
-          const width = person.average === null ? 0 : Math.round(person.average / 5 * 100);
-          const recommendationLabel = person.recommendations === 1 ? 'Empfehlung' : 'Empfehlungen';
-          return `<div class="rank"><div class="rank-num">${person.rank === null ? '—' : person.rank}</div><div class="avatar" style="background:${member.color}">${member.initials}</div><div class="rank-info"><strong>${esc(member.name)}${person.id === currentUser ? ' · du' : ''}</strong><span class="small">${person.recommendations} ${recommendationLabel} · ${person.receivedRatings} Bewertungen anderer</span><div class="progress"><i style="width:${width}%"></i></div></div><strong>${scoreLabel}</strong></div>`;
-        }).join('');
-        const myStats = ranking.find(person => person.id === currentUser);
-        document.querySelector('#dashboardPersonalRank').textContent = myStats && myStats.rank !== null ? `#${myStats.rank}` : '—';
-        document.querySelector('#dashboardPersonalAverage').textContent = `dein Platz · Ø ${myStats && myStats.average !== null ? `${formatScore(myStats.average)} ★` : '—'} für deine Empfehlungen`;
-
-        document.querySelector('#categoryStats').innerHTML = categoryTotals.map((category, index) => {
-          const average = category.count ? category.sum / category.count : null;
-          return average === null
-            ? `<div class="stats-category"><span class="stats-category-label">${categories[index]}</span><span class="small">Noch keine Bewertungen</span><span class="stats-category-value">—</span></div>`
-            : `<div class="stats-category"><span class="stats-category-label">${categories[index]}</span><div class="progress"><i style="width:${average / 5 * 100}%"></i></div><span class="stats-category-value">${formatScore(average)} ★</span></div>`;
-        }).join('');
-        document.querySelector('#memberStats').innerHTML = Object.entries(members).map(([id, member]) => {
-          const stats = byMember[id];
-          const average = stats.scoredRecommendations
-            ? stats.restaurantScoreTotal / stats.scoredRecommendations
-            : null;
-          return `<article class="member-stat-card">
-            <div class="member-stat-head"><span class="avatar" style="background:${member.color}">${member.initials}</span><div><strong>${esc(member.name)}</strong><span class="small">Abgeschlossene Empfehlungen</span></div></div>
-            <div class="member-stat-metrics">
-              <div class="member-stat-metric"><b>${stats.recommendations}</b><span>Empfehlungen</span></div>
-              <div class="member-stat-metric"><b>${average === null ? '—' : `${formatScore(average)} ★`}</b><span>Ø Restaurant-Score</span></div>
-              <div class="member-stat-metric"><b>${stats.receivedRatings}</b><span>Bewertungen anderer Mitglieder</span></div>
-            </div>
-            <p class="member-stat-note">Ø Restaurant-Score deiner abgeschlossenen Empfehlungen; Erstellerbewertungen sind nicht eingerechnet.</p>
-          </article>`;
-        }).join('');
-      };
-      window.renderStatistics = renderStatistics;
-
-      document.querySelector('#saveRating').addEventListener('click', () => {
-        if (!selectedMeal || scoreKeys.some(key => !Number.isFinite(ratings[key]))) return;
-        selectedMeal.reviews ||= [];
-        if (selectedMeal.reviews.some(review => review.id === currentUser)) return;
-        selectedMeal.reviews.push({
-          id:currentUser,
-          scores:scoreKeys.map(key => ratings[key]),
-          comment:document.querySelector('#ratingComment').value.trim()
-        });
-      }, true);
-      $$('[data-view="stats"]').forEach(button => button.addEventListener('click', renderStatistics));
-      renderStatistics();
-
-      historicalResults.forEach((result, index) => {
-        const card = historyGrid.children[index];
-        if (!card) return;
-        const button = document.createElement('button');
-        button.className = 'details-btn';
-        button.textContent = 'Ergebnisse ansehen →';
-        button.style.cssText = 'margin-top:16px;width:100%;padding:10px 12px;border-radius:9px;font-weight:700';
-        button.addEventListener('click', () => {
-          const countedRatings = result.people.filter(person => person.id !== result.creator).length;
-          document.querySelector('#historyResultTitle').textContent = result.name;
-          document.querySelector('#historyResultBody').innerHTML = `
-            <div class="rating-summary">
-              <div><b>${formatScore(result.score)} ★</b>Restaurant-Durchschnitt</div>
-              <div><b>${result.people.length}</b>Bewertungen abgegeben</div>
-            </div>
-            <p class="small">Im Restaurant-Durchschnitt zählen ${countedRatings} Bewertungen. Die Erstellerbewertung bleibt sichtbar, wird aber nicht eingerechnet.</p>
-            <div class="history-result-list">${result.people.map(person => {
-              const member = members[person.id];
-              const isCreator = person.id === result.creator;
-              return `<article class="history-result-person">
-                <div class="history-result-person-head">
-                  <span class="avatar" style="background:${member.color}">${member.initials}</span>
-                  <div class="history-result-person-title"><b>${member.name}</b>${isCreator ? '<span class="creator-badge">Ersteller · nicht im Durchschnitt</span>' : '<span class="small">Teilnehmerbewertung</span>'}</div>
-                </div>
-                <div class="history-result-categories">${person.scores.map((score, categoryIndex) => `
-                  <div class="history-result-category">
-                    <small>${categories[categoryIndex]}</small>
-                    <span class="history-result-stars" role="img" aria-label="${formatScore(score)} von 5 Sternen">${renderStars(score)}</span>
-                    <span class="history-result-score">${formatScore(score)}</span>
-                  </div>`).join('')}
-                </div>
-                ${person.comment ? `<p class="history-result-comment">„${person.comment}“</p>` : ''}
-              </article>`;
-            }).join('')}</div>`;
-          modal.classList.add('open');
-        });
-        card.appendChild(button);
-      });
-    })();
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
