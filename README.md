@@ -10,6 +10,8 @@ Während einer laufenden Fressung bleiben alle Bewertungen verborgen, bis das ak
 
 Die vier Bewertungskategorien erlauben weiterhin 0 bis 5 Sterne in 0,5er-Schritten: links auf einen Stern tippen für den halben Wert, rechts für den ganzen Wert; **0** setzt null Sterne. Mit Tab wird jede Kategorie erreicht, Pfeiltasten ändern den Wert um 0,5, **Pos1** setzt 0 und **Ende** setzt 5. Enter/Leertaste auf einem Stern wählt den ganzen Wert. Aktueller Wert und Halbsterne bleiben sichtbar. Dialoge unterstützen Escape, halten den Tastaturfokus und geben ihn beim Schließen zurück. Fehlermeldungen bleiben bis zur nächsten Aktion beziehungsweise bis zum Schließen sichtbar.
 
+Für den Restaurant-Score, Gruppen-Durchschnitt und das Leaderboard wird **Essen dreifach** gewichtet; Service, Ambiente und Preis-Leistung zählen jeweils einfach. Die Einzelwerte der Kategorien bleiben unverändert. Die Gewichtung ist bei Essen mit `x3` markiert.
+
 Goldene Fokusrahmen werden nicht verwendet. Bei Tastaturbedienung markieren dezente Unterstreichungen beziehungsweise Hintergrundtöne den aktiven Control; automatischer Fokus, Mausklicks und Touch erzeugen keine zusätzlichen Markierungsrahmen. Formularränder und die Auswahl der Teilnehmenden bleiben erhalten.
 
 ## Lokale Oberflächenprüfung
@@ -46,6 +48,8 @@ Die kurzen Viewport-Checks simulieren den verbleibenden Platz bei geöffneter Bi
 3. Änderungen nach `main` pushen. Der Workflow **Deploy static site to GitHub Pages** veröffentlicht die Seite; alternativ lässt er sich unter **Actions** manuell starten.
 
 Die Projektseite ist anschließend unter `https://scrabex.github.io/Connoisseure/` erreichbar. Das Frontend verwendet derzeit keine root-absoluten Asset- oder Navigationspfade und funktioniert daher auch unter dem Repository-Unterpfad.
+
+Änderungen auf `dev` lassen sich vor dem Merge in `main` lokal ansehen: im Repository-Ordner `py -m http.server 8000` starten und `http://localhost:8000` im Browser öffnen. Mit **Strg+C** wird der lokale Server beendet. Dieser Preview ist nur auf dem eigenen Rechner verfügbar; GitHub Pages veröffentlicht weiterhin ausschließlich `main`.
 
 ## Supabase
 
