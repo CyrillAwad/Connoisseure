@@ -16,6 +16,18 @@ Goldene Fokusrahmen werden nicht verwendet. Bei Tastaturbedienung markieren deze
 
 ## Lokale Oberflächenprüfung
 
+### Website lokal im Browser ansehen
+
+Wechsle zuerst in den Branch, den du prüfen möchtest (zum Beispiel `git switch dev`). Im Repository-Ordner startest du dann in PowerShell den statischen Webserver:
+
+```powershell
+py -m http.server 8000
+```
+
+Öffne `http://localhost:8000` im Browser. Nach Änderungen an `index.html`, `styles.css` oder `app.js` kannst du die Seite neu laden; ein Build-Schritt ist nicht erforderlich. Mit **Strg+C** im Terminal beendest du den Server. Der Preview ist nur auf deinem Rechner erreichbar.
+
+Wichtig: Die lokal gestartete Website verwendet bei Login und Aktionen weiterhin das konfigurierte Supabase-Projekt. Für isolierte UI-Prüfungen ohne echte Datenbankaktionen nutze die nachfolgend beschriebenen Browserchecks; sie ersetzen Supabase und OpenStreetMap durch Testdaten.
+
 Die Website selbst benötigt keine npm-Abhängigkeiten. Die optionalen Browserchecks in `tests/` nutzen nur Playwright als Entwicklungswerkzeug:
 
 ```powershell
@@ -49,7 +61,7 @@ Die kurzen Viewport-Checks simulieren den verbleibenden Platz bei geöffneter Bi
 
 Die Projektseite ist anschließend unter `https://scrabex.github.io/Connoisseure/` erreichbar. Das Frontend verwendet derzeit keine root-absoluten Asset- oder Navigationspfade und funktioniert daher auch unter dem Repository-Unterpfad.
 
-Änderungen auf `dev` lassen sich vor dem Merge in `main` lokal ansehen: im Repository-Ordner `py -m http.server 8000` starten und `http://localhost:8000` im Browser öffnen. Mit **Strg+C** wird der lokale Server beendet. Dieser Preview ist nur auf dem eigenen Rechner verfügbar; GitHub Pages veröffentlicht weiterhin ausschließlich `main`.
+Der Pages-Workflow veröffentlicht nur Änderungen auf `main`; Pushes auf `dev` aktualisieren die öffentliche Projektseite nicht.
 
 ## Supabase
 
