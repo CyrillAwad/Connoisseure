@@ -26,7 +26,17 @@ py -m http.server 8000
 
 Öffne `http://localhost:8000` im Browser. Nach Änderungen an `index.html`, `styles.css` oder `app.js` kannst du die Seite neu laden; ein Build-Schritt ist nicht erforderlich. Mit **Strg+C** im Terminal beendest du den Server. Der Preview ist nur auf deinem Rechner erreichbar.
 
-Wichtig: Die lokal gestartete Website verwendet bei Login und Aktionen weiterhin das konfigurierte Supabase-Projekt. Für isolierte UI-Prüfungen ohne echte Datenbankaktionen nutze die nachfolgend beschriebenen Browserchecks; sie ersetzen Supabase und OpenStreetMap durch Testdaten.
+Wichtig: Die lokal gestartete Website verwendet bei Login und Aktionen weiterhin das konfigurierte Supabase-Projekt. Für isolierte UI-Prüfungen ohne echte Datenbankaktionen nutze die nachfolgend beschriebenen Browserchecks; sie ersetzen Supabase, OpenStreetMap und Google Maps durch Testdaten.
+
+Für den Google-Maps-Modus muss in Google Cloud **Maps JavaScript API** und **Places API (New)** aktiviert sein; Google verlangt dafür ein Billing-Konto. Erzeuge einen Browser-Key und beschränke ihn auf diese APIs sowie die Referrer `http://localhost:8000/*` und `https://scrabex.github.io/Connoisseure/*`.
+
+Für lokale Tests kopiere `google-maps-config.example.js` einmalig als `google-maps-config.js` und trage dort deinen Entwicklungs-Key anstelle von `PASTE_YOUR_RESTRICTED_DEMO_KEY_HERE` ein:
+
+```powershell
+Copy-Item google-maps-config.example.js google-maps-config.js
+```
+
+Die lokale `google-maps-config.js` ist Git-ignoriert und bleibt damit auf deinem Rechner. Für GitHub Pages legst du den Key unter **Settings → Secrets and variables → Actions** als Repository-Secret `GOOGLE_MAPS_API_KEY` ab. Der Deploy-Workflow erstellt daraus beim Veröffentlichen dieselbe Konfigurationsdatei. Der Key ist im ausgelieferten Browser-Code sichtbar; verwende nur einen auf APIs und Referrer eingeschränkten Key. GitHub-Pages-Referrer: `https://scrabex.github.io/Connoisseure/*`.
 
 Die Website selbst benötigt keine npm-Abhängigkeiten. Die optionalen Browserchecks in `tests/` nutzen nur Playwright als Entwicklungswerkzeug:
 
@@ -49,7 +59,7 @@ Für Firefox analog `npx playwright install firefox` ausführen und `BROWSER_ENG
 
 `CHECK_FILTER` beschränkt den Lauf auf Prüfgruppen, deren Namen den angegebenen Text enthalten. Die Bewertungs-Sichtbarkeit lässt sich gezielt mit `$env:CHECK_FILTER = 'submitted reviews'` und `npm --prefix tests run check` aus dem Repository-Root prüfen; danach `$env:CHECK_FILTER = ''` für den vollständigen Lauf setzen. Diese Fälle prüfen bei 390 und 1440 px die Sperre bis zur eigenen Abgabe, sofortige Freigabe bereits eingegangener Bewertungen, Nichtteilnehmende, Vornamenwechsel/Zurücknavigation sowie die endgültige Freigabe aller Bewertungen nach Abschluss.
 
-Der Check startet und beendet seinen eigenen lokalen HTTP-Server unter einem simulierten `/Connoisseure/`-Unterpfad. Sämtliche externen Anfragen werden abgefangen: Supabase wird durch synthetische Mitglieder/Fressungen und RPC-Fixtures ersetzt, OSM durch lokale Antworten. Es werden keine echten Logins, Datenänderungen oder öffentlichen Suchanfragen ausgeführt. Geprüft werden Ansichten und Dialoge bei 320, 375, 390, 768, 1024 und 1440 px, Overflow, Button-Zentrierung/44-px-Touchziele, Fokus/Navigation, Halbsternwerte, Fressungsablauf, Rechte, Durchschnittswerte/Ranking, Mitglieder-Lade-Race sowie OSM-Autofill/Cache/Cooldown. Screenshots und `report.json` landen im temporären Ordner `connoisseure-ui-checks`; `SCREENSHOT_DIR` kann einen anderen Ausgabeordner festlegen.
+Der Check startet und beendet seinen eigenen lokalen HTTP-Server unter einem simulierten `/Connoisseure/`-Unterpfad. Sämtliche externen Anfragen werden abgefangen: Supabase wird durch synthetische Mitglieder/Fressungen und RPC-Fixtures ersetzt, OSM und Google Maps durch lokale Antworten. Es werden keine echten Logins, Datenänderungen oder öffentlichen Suchanfragen ausgeführt. Geprüft werden Ansichten und Dialoge bei 320, 375, 390, 768, 1024 und 1440 px, Overflow, Button-Zentrierung/44-px-Touchziele, Fokus/Navigation, Halbsternwerte, Fressungsablauf, Rechte, Durchschnittswerte/Ranking, Mitglieder-Lade-Race sowie OSM-/Google-Maps-Suche, Auswahl und OSM-Cache/Cooldown. Screenshots und `report.json` landen im temporären Ordner `connoisseure-ui-checks`; `SCREENSHOT_DIR` kann einen anderen Ausgabeordner festlegen.
 
 Die kurzen Viewport-Checks simulieren den verbleibenden Platz bei geöffneter Bildschirmtastatur. Sie ersetzen keinen Test auf einem physischen iOS-/Android-Gerät oder mit einem Screenreader.
 
