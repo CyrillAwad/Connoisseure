@@ -28,11 +28,6 @@ jobs:
         uses: actions/checkout@v4
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-      - name: Configure Google Maps browser key
-        env:
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-        run: |
-          node -e 'const fs = require("node:fs"); const key = process.env.GOOGLE_MAPS_API_KEY || ""; fs.writeFileSync("google-maps-config.js", `window.CONNOISSEURE_GOOGLE_MAPS_API_KEY = ${JSON.stringify(key)};`);'
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
